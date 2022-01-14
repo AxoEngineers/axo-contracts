@@ -18,17 +18,29 @@ contract AxolittlesStaking is Ownable {
 
     // These two are set in tandem, so if stakeBlock is 0 then stakeOwner will be address(0x0)
     // We check stakeOwner first so checking stakeBlock is unnecessary
+
+    /*
+        Alex: why does this need to be public, shouldn't we set as internal?
+    */
     mapping(uint => uint) public stakeBlock; // For each tokenId, the block number when staking began. 0 if unstaked.
     mapping(uint => address) public stakeOwner; // For each tokenId, the owner of it
 
     event Stake(address indexed owner, uint tokenId);
     event Unstake(address indexed owner, uint tokenId);
 
+    /*
+        token is bubbles
+    */
     constructor(address _token, uint _emissionPerBlock) {
         TOKEN = _token;
         emissionPerBlock = _emissionPerBlock;
     }
 
+    /*
+        for each tokenID:
+            1. Transfers axo from sender address to staking contract
+            2. Store current block number
+    */
     function stake(uint[] memory tokenIds) external {
         for (uint i = 0; i < tokenIds.length; i++) {
             IERC721(AXOLITTLES).transferFrom(msg.sender, address(this), tokenIds[i]);
