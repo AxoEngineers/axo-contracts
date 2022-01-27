@@ -22,9 +22,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 
 module.exports = {
-  defaultNetwork: "rinkeby",
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+      forking: {
+        url: 	"https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+        blockNumber: 14083004
+      }
     },
     live: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -45,7 +49,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 1000
       }
     }
   },
