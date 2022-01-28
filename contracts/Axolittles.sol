@@ -2,7 +2,6 @@
 
 // File contracts/Axolittles.sol
 
-
 /**
    #                                                            
   # #   #    #  ####  #      # ##### ##### #      ######  ####  
@@ -21,17 +20,16 @@ pragma solidity ^0.8.10;
 /// @author Axolittles Team
 /// @notice Contract used for initial minting phase
 contract Axolittles is ERC721, Ownable {
-
-    uint public mintPrice = 0.07 ether; // Mutable by owner
-    uint public maxItems = 10000;
-    uint public totalSupply = 0;
-    uint public maxItemsPerTx = 10; // Mutable by owner
+    uint256 public mintPrice = 0.07 ether; // Mutable by owner
+    uint256 public maxItems = 10000;
+    uint256 public totalSupply = 0;
+    uint256 public maxItemsPerTx = 10; // Mutable by owner
     string public _baseTokenURI;
     bool public publicMintPaused = false;
-    uint public startTimestamp = 1630944000; // Monday, September 6, 2021 at 12pm Eastern
+    uint256 public startTimestamp = 1630944000; // Monday, September 6, 2021 at 12pm Eastern
 
     // declare Mint event. Emits are stored on blockchain and applications can listen for them.
-    event Mint(address indexed owner, uint indexed tokenId);
+    event Mint(address indexed owner, uint256 indexed tokenId);
 
     //Set contract name and token symbol
     constructor() ERC721("Axolittles", "AXOLITTLE") {}
@@ -40,7 +38,7 @@ contract Axolittles is ERC721, Ownable {
     receive() external payable {}
 
     /// @notice Function for airdropping by owner, calls `_mintWithoutValidation()` function
-    function giveawayMint(address to, uint amount) external onlyOwner {
+    function giveawayMint(address to, uint256 amount) external onlyOwner {
         _mintWithoutValidation(to, amount);
     }
 
@@ -50,8 +48,8 @@ contract Axolittles is ERC721, Ownable {
     function publicMint() external payable {
         require(block.timestamp >= startTimestamp, "publicMint: Not open yet");
         require(!publicMintPaused, "publicMint: Paused");
-        uint remainder = msg.value % mintPrice;
-        uint amount = msg.value / mintPrice;
+        uint256 remainder = msg.value % mintPrice;
+        uint256 amount = msg.value / mintPrice;
         require(remainder == 0, "publicMint: Send a divisible amount of eth");
         require(amount <= maxItemsPerTx, "publicMint: Surpasses maxItemsPerTx");
 
@@ -59,9 +57,12 @@ contract Axolittles is ERC721, Ownable {
     }
 
     /// @dev internal minting function, no checks
-    function _mintWithoutValidation(address to, uint amount) internal {
-        require(totalSupply + amount <= maxItems, "mintWithoutValidation: Sold out");
-        for (uint i = 0; i < amount; i++) {
+    function _mintWithoutValidation(address to, uint256 amount) internal {
+        require(
+            totalSupply + amount <= maxItems,
+            "mintWithoutValidation: Sold out"
+        );
+        for (uint256 i = 0; i < amount; i++) {
             _mint(to, totalSupply);
             emit Mint(to, totalSupply);
             totalSupply += 1;
@@ -70,16 +71,19 @@ contract Axolittles is ERC721, Ownable {
 
     /// @notice checks if mint open, needs start time passed, unpaused, and axos in stock
     function isOpen() external view returns (bool) {
-        return block.timestamp >= startTimestamp && !publicMintPaused && totalSupply < maxItems;
+        return
+            block.timestamp >= startTimestamp &&
+            !publicMintPaused &&
+            totalSupply < maxItems;
     }
 
     /// @notice ADMIN FUNCTIONALITY
 
-    function setStartTimestamp(uint _startTimestamp) external onlyOwner {
+    function setStartTimestamp(uint256 _startTimestamp) external onlyOwner {
         startTimestamp = _startTimestamp;
     }
 
-    function setMintPrice(uint _mintPrice) external onlyOwner {
+    function setMintPrice(uint256 _mintPrice) external onlyOwner {
         mintPrice = _mintPrice;
     }
 
@@ -87,7 +91,7 @@ contract Axolittles is ERC721, Ownable {
         publicMintPaused = _publicMintPaused;
     }
 
-    function setMaxItemsPerTx(uint _maxItemsPerTx) external onlyOwner {
+    function setMaxItemsPerTx(uint256 _maxItemsPerTx) external onlyOwner {
         maxItemsPerTx = _maxItemsPerTx;
     }
 
@@ -96,21 +100,25 @@ contract Axolittles is ERC721, Ownable {
         _baseTokenURI = __baseTokenURI;
     }
 
-    
     /// @dev Withdraw the entire contract balance to the dev address
     function withdraw() external onlyOwner {
         sendEth(owner(), address(this).balance);
     }
 
-    function sendEth(address to, uint amount) internal {
-        (bool success,) = to.call{value: amount}("");
+    function sendEth(address to, uint256 amount) internal {
+        (bool success, ) = to.call{value: amount}("");
         require(success, "Failed to send ether");
     }
 
     // METADATA FUNCTIONALITY
     /// @dev Returns a URI for a given token ID's metadata
-    function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        return string(abi.encodePacked(_baseTokenURI, Strings.toString(_tokenId)));
+    function tokenURI(uint256 _tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return
+            string(abi.encodePacked(_baseTokenURI, Strings.toString(_tokenId)));
     }
-
 }

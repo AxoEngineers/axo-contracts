@@ -6,17 +6,18 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-/// @title Interface to interact with Bubbles contract. 
+/// @title Interface to interact with Bubbles contract.
 /// @dev can be used with IBubbles(contractAddress).functionName(params)
 interface IBubbles {
-    function mint(address recipient, uint amount) external;
+    function mint(address recipient, uint256 amount) external;
 }
 
 /// @title Contract for staking axos to receive BUBBLE
 /// @author Axolittles Team
 /// @dev Staking contract interacts with Axolittles contract and Bubbles contract
 contract AxolittlesStaking is Ownable {
-    address public constant AXOLITTLES = 0xf36446105fF682999a442b003f2224BcB3D82067;
+    address public constant AXOLITTLES =
+        0xf36446105fF682999a442b003f2224BcB3D82067;
     address public constant TOKEN = 0x58f46F627C88a3b217abc80563B9a726abB873ba;
     /** 
     @notice Amount of bubbles generated each block. 
@@ -27,7 +28,7 @@ contract AxolittlesStaking is Ownable {
     uint256 public emissionPerBlock;
 
     /// @notice Constructor takes in Bubbles address, and # bubbles generated per block
-    constructor(uint _emissionPerBlock) {
+    constructor(uint256 _emissionPerBlock) {
         emissionPerBlock = _emissionPerBlock;
         //console.log("Deployed staking contract with axo addr: '%s', token addr: '%s', emissionPerBlock: '%d'",
         //AXOLITTLES, TOKEN, emissionPerBlock);
@@ -41,11 +42,10 @@ contract AxolittlesStaking is Ownable {
         3. block since last reward calculation
      */
     struct staker {
-        uint calcedReward;
-        uint numStaked;
-        uint blockSinceLastCalc;
+        uint256 calcedReward;
+        uint256 numStaked;
+        uint256 blockSinceLastCalc;
     }
-
 
     /**
     @notice Maps to store user info
@@ -53,15 +53,14 @@ contract AxolittlesStaking is Ownable {
     `stakedAxos` stores (tokenID => address of owner)
     */
     mapping(address => staker) internal stakers;
-    mapping(uint => address) internal stakedAxos;
+    mapping(uint256 => address) internal stakedAxos;
 
     /// @notice declare Stake and Unstake event. Emits are stored on blockchain and applications can listen for them.
-    event Stake(address indexed owner, uint[] tokenIds);
-    event Unstake(address indexed owner, uint[] tokenIds);
-    event Claim(address indexed owner, uint totalReward);
+    event Stake(address indexed owner, uint256[] tokenIds);
+    event Unstake(address indexed owner, uint256[] tokenIds);
+    event Claim(address indexed owner, uint256 totalReward);
 
     //todo: pause function?
-
 
     /**
     @notice Function to stake axos. Transfers axos from sender to this contract.
@@ -76,10 +75,14 @@ contract AxolittlesStaking is Ownable {
     6. numStaked += tokenIDs.size
     7. blockSinceLastCalc = currBlock
     */
-    function stake(uint[] memory tokenIds) external {
+    function stake(uint256[] memory tokenIds) external {
         require(tokenIds.length > 0, "Nothing to stake");
-        for (uint i = 0; i < tokenIds.length; i++) {
-            IERC721(AXOLITTLES).transferFrom(msg.sender, address(this), tokenIds[i]);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            IERC721(AXOLITTLES).transferFrom(
+                msg.sender,
+                address(this),
+                tokenIds[i]
+            );
             //is this doable by batch?
             stakedAxos[tokenIds[i]] = msg.sender;
             console.log("staked axo id: ", tokenIds[i]);
@@ -104,15 +107,19 @@ contract AxolittlesStaking is Ownable {
     @dev maybe utilize claim() function here, instead of reimplementing it? 
     @dev is there any benefit of deleting user if they no longer have any staked?
      */
-    function unstake(uint[] memory tokenIds) external {
+    function unstake(uint256[] memory tokenIds) external {
         //todo:
         //need to perform ownership checks
         //will everything revert if fails partway?
         stakers[msg.sender].calcedReward = checkReward(msg.sender);
-        for(uint i = 0; i < tokenIds.length; i++) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             require(msg.sender == stakedAxos[tokenIds[i]], "Not your axo!");
             delete stakedAxos[tokenIds[i]];
-            IERC721(AXOLITTLES).transferFrom(address(this), msg.sender, tokenIds[i]);
+            IERC721(AXOLITTLES).transferFrom(
+                address(this),
+                msg.sender,
+                tokenIds[i]
+            );
         }
         stakers[msg.sender].numStaked -= tokenIds.length;
         stakers[msg.sender].blockSinceLastCalc = block.number;
@@ -131,7 +138,7 @@ contract AxolittlesStaking is Ownable {
     */
     function claim() external {
         //todo: ownership and other checks here
-        uint totalReward = checkReward(msg.sender);
+        uint256 totalReward = checkReward(msg.sender);
         require(totalReward > 0, "Nothing to claim");
         stakers[msg.sender].blockSinceLastCalc = block.number;
         stakers[msg.sender].calcedReward = 0;
@@ -143,22 +150,24 @@ contract AxolittlesStaking is Ownable {
     @notice Function to check rewards per staker address
     @param _staker_address address of axo owner
     */
-    function checkReward(address _staker_address) public view returns (uint) {
+    function checkReward(address _staker_address)
+        public
+        view
+        returns (uint256)
+    {
         //todo:
-        return (
-            stakers[_staker_address].calcedReward +
+        return (stakers[_staker_address].calcedReward +
             stakers[_staker_address].numStaked *
             emissionPerBlock *
-            (block.number - stakers[_staker_address].blockSinceLastCalc)
-        );
+            (block.number - stakers[_staker_address].blockSinceLastCalc));
     }
 
     /// @notice Function to change amount of Bubbles generated each block per axo
-    function setEmissionPerBlock(uint _emissionPerBlock) external onlyOwner {
+    function setEmissionPerBlock(uint256 _emissionPerBlock) external onlyOwner {
         emissionPerBlock = _emissionPerBlock;
     }
 }
-    /**
+/**
     todo: airdrop rewards function
     pass in data via merkle root in format of adderess/bubblesOwed
     keep mapping(address => bool) rewardsTracker to track who has claimed already
