@@ -158,7 +158,14 @@ contract AxolittlesStaking is Ownable {
         emissionPerBlock = _emissionPerBlock;
     }
 }
-
-    //todo: airdrop rewards function
-
-    // todo: admin unstake function?
+    /**
+    todo: airdrop rewards function
+    pass in data via merkle root in format of adderess/bubblesOwed
+    keep mapping(address => bool) rewardsTracker to track who has claimed already
+    
+    todo: migration helper
+    help transfer peoples axos from old staking contract to new one, autoclaim rewards?
+    
+    todo: admin unstake function?
+    for emergency use, etc.
+    */
