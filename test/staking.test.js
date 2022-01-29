@@ -1,12 +1,9 @@
 const { expect, assert } = require("chai");
 const { network, ethers } = require("hardhat");
 const { beforeEach } = require("mocha");
-const { Contract, Signer } = require("ethers");
-const { SignerWithAddress } = require("@nomiclabs/hardhat-ethers/signers");
-const { doesNotMatch } = require("assert");
-const { TokenClass } = require("typescript");
 const AXOLITTLES_ADDRESS = "0xf36446105fF682999a442b003f2224BcB3D82067";
 const TOKEN_ADDRESS = "0x58f46F627C88a3b217abc80563B9a726abB873ba";
+const EMISSION_AMOUNT = "15000000000000000";
 
 //todo: check how reverts work when failure partway through function, especially w/ regard to transfers
 describe("AxolittlesStaking", () => {
@@ -39,7 +36,7 @@ describe("AxolittlesStaking", () => {
     ac019 = await ethers.getSigner(
       "0x8Ada5F216eBA7612682b64C9fd65D460bFed264F"
     );
-    const tx = await owner.sendTransaction({
+    await owner.sendTransaction({
       to: ac019.address,
       value: ethers.utils.parseEther("1.0"),
     });
@@ -49,7 +46,7 @@ describe("AxolittlesStaking", () => {
     stakingContract = await AxolittlesStaking.deploy(
       AXOLITTLES_ADDRESS,
       TOKEN_ADDRESS,
-      "15000000000000000"
+      EMISSION_AMOUNT
     );
     axolittlesContract = await ethers.getContractAt(
       "Axolittles",
@@ -67,27 +64,24 @@ describe("AxolittlesStaking", () => {
     //console.log("Contract deployed to:", stakingContract.address);
   });
   //AUX CONTRACT CHECKS:
-  it("should fork existing contract state at block 14083004", async () => {
+  it("should fork existing contract state", async () => {
     expect(await axolittlesContract.owner()).to.equal(
       "0xb0151D256ee16d847F080691C3529F316b2D54b3"
     );
     expect(await bubblesContract.owner()).to.equal(
       "0xb0151D256ee16d847F080691C3529F316b2D54b3"
     );
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(103);
   });
   //DEPLOYMENT TEST:
   it("should deploy contract with correct constructors", async () => {
     expect(await stakingContract.AXOLITTLES()).to.equal(AXOLITTLES_ADDRESS);
     expect(await stakingContract.TOKEN()).to.equal(TOKEN_ADDRESS);
-    expect(await stakingContract.emissionPerBlock()).to.equal(
-      "15000000000000000"
-    );
+    expect(await stakingContract.emissionPerBlock()).to.equal(EMISSION_AMOUNT);
     expect(await stakingContract.checkReward(owner.address)).to.equal(0);
   });
 
   it("Should set the right owner", async () => {
-    expect(await stakingContract.owner()).to.equal(await owner.address);
+    expect(await stakingContract.owner()).to.equal(owner.address);
   });
 
   //ADMIN TESTS:
@@ -96,9 +90,6 @@ describe("AxolittlesStaking", () => {
     await expect(
       stakingContract.connect(addr1).setEmissionPerBlock(0)
     ).to.be.revertedWith("Ownable: caller is not the owner");
-    expect(await stakingContract.emissionPerBlock()).to.equal(
-      "15000000000000000"
-    );
   });
 
   //Change emissions when owner
@@ -115,20 +106,6 @@ describe("AxolittlesStaking", () => {
     await expect(
       stakingContract.connect(n8).stake([4504, 7027, 5803, 1, 2, 3])
     ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(103);
-    expect(
-      await axolittlesContract.balanceOf(stakingContract.address)
-    ).to.equal(0);
-  });
-  //b. not owned first, then owned
-  it("should fail when staking mixed not owned then owned together", async () => {
-    await expect(
-      stakingContract.connect(n8).stake([1, 2, 3, 4504, 7027, 5803])
-    ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(103);
-    expect(
-      await axolittlesContract.balanceOf(stakingContract.address)
-    ).to.equal(0);
   });
 
   //test what happens when staking nothing
@@ -143,10 +120,6 @@ describe("AxolittlesStaking", () => {
     await expect(
       stakingContract.connect(n8).stake([1, 2, 3])
     ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(103);
-    expect(
-      await axolittlesContract.balanceOf(stakingContract.address)
-    ).to.equal(0);
   });
 
   //4. test legitimate stake
@@ -173,23 +146,6 @@ describe("AxolittlesStaking", () => {
     await expect(
       stakingContract.connect(n8).unstake([4504, 7027, 5803, 8052])
     ).to.be.revertedWith("Not your axo!");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(100);
-    expect(
-      await axolittlesContract.balanceOf(stakingContract.address)
-    ).to.equal(4);
-  });
-  //b. not owned first, then owned
-  it("should fail when unstaking owned(staked) and owned(not staked) together", async () => {
-    await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
-      .to.emit(stakingContract, "Stake")
-      .withArgs(n8.address, [4504, 7027, 5803]);
-    await expect(
-      stakingContract.connect(n8).unstake([4504, 7027, 5803, 4385])
-    ).to.be.revertedWith("Not your axo!");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(100);
-    expect(
-      await axolittlesContract.balanceOf(stakingContract.address)
-    ).to.equal(3);
   });
 
   //2. test what happens when unstaking nothing
@@ -204,7 +160,6 @@ describe("AxolittlesStaking", () => {
     await expect(
       stakingContract.connect(n8).unstake([1, 2, 3])
     ).to.be.revertedWith("Not your axo!");
-    expect(await axolittlesContract.balanceOf(n8.address)).to.equal(103);
   });
 
   //4. test legitmate unstake with delay

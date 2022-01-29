@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.10;
 
@@ -57,28 +57,27 @@ contract AxolittlesStaking is Ownable {
   function stake(uint256[] memory tokenIds) external {
     require(!stakingPaused, "Staking is paused");
     require(tokenIds.length > 0, "Nothing to stake");
+    stakers[msg.sender].calcedReward = checkReward(msg.sender);
+    stakers[msg.sender].numStaked += tokenIds.length;
+    stakers[msg.sender].blockSinceLastCalc = block.number;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       IERC721(AXOLITTLES).transferFrom(msg.sender, address(this), tokenIds[i]);
       stakedAxos[tokenIds[i]] = msg.sender;
     }
-    stakers[msg.sender].calcedReward = checkReward(msg.sender);
-    stakers[msg.sender].numStaked += tokenIds.length;
-    stakers[msg.sender].blockSinceLastCalc = block.number;
     emit Stake(msg.sender, tokenIds);
   }
 
   /// @notice Function to unstake axos. Transfers axos from this contract back to sender address.
   function unstake(uint256[] memory tokenIds) external {
-    //need to perform ownership checks
     require(tokenIds.length > 0, "Nothing to unstake");
     stakers[msg.sender].calcedReward = checkReward(msg.sender);
+    stakers[msg.sender].numStaked -= tokenIds.length;
+    stakers[msg.sender].blockSinceLastCalc = block.number;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(msg.sender == stakedAxos[tokenIds[i]], "Not your axo!");
       delete stakedAxos[tokenIds[i]];
       IERC721(AXOLITTLES).transferFrom(address(this), msg.sender, tokenIds[i]);
     }
-    stakers[msg.sender].numStaked -= tokenIds.length;
-    stakers[msg.sender].blockSinceLastCalc = block.number;
     emit Unstake(msg.sender, tokenIds);
   }
 
@@ -97,7 +96,7 @@ contract AxolittlesStaking is Ownable {
     todo: claim migration rewards function
     pass in data via merkle root in format of addreess/$BUBBLE owed
     keep mapping(address => bool) rewardsTracker to track who has claimed already
-  */
+  
   function claimMigrationReward(
     uint256 _rewardAmount,
     bytes32[] calldata merkleProof
@@ -111,6 +110,7 @@ contract AxolittlesStaking is Ownable {
     IBubbles(TOKEN).mint(msg.sender, _rewardAmount);
     emit ClaimMigrationReward(msg.sender, _rewardAmount);
   }
+  */
 
   /// @notice Function to check rewards per staker address
   function checkReward(address _staker_address) public view returns (uint256) {
@@ -137,7 +137,7 @@ contract AxolittlesStaking is Ownable {
     emissionPerBlock = _emissionPerBlock;
   }
 
-  /// @notice Function to turn prevent further staking
+  /// @notice Function to prevent further staking
   function pauseStaking(bool _isPaused) external onlyOwner {
     stakingPaused = _isPaused;
   }
