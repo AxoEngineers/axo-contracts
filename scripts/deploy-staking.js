@@ -14,8 +14,14 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const AxolittlesStaking = await hre.ethers.getContractFactory("AxolittlesStaking");
-  const axolittlesstaking = await AxolittlesStaking.deploy("args here");
+  const AxolittlesStaking = await hre.ethers.getContractFactory(
+    "AxolittlesStaking"
+  );
+  const axolittlesstaking = await AxolittlesStaking.deploy(
+    AXOLITTLES_ADDRESS,
+    TOKEN_ADDRESS,
+    "15000000000000000"
+  );
 
   await axolittlesstaking.deployed();
 

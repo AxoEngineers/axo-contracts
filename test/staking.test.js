@@ -4,6 +4,7 @@ const { beforeEach } = require("mocha");
 const { Contract, Signer } = require("ethers");
 const { SignerWithAddress } = require("@nomiclabs/hardhat-ethers/signers");
 const { doesNotMatch } = require("assert");
+const { TokenClass } = require("typescript");
 const AXOLITTLES_ADDRESS = "0xf36446105fF682999a442b003f2224BcB3D82067";
 const TOKEN_ADDRESS = "0x58f46F627C88a3b217abc80563B9a726abB873ba";
 
@@ -38,14 +39,18 @@ describe("AxolittlesStaking", () => {
     ac019 = await ethers.getSigner(
       "0x8Ada5F216eBA7612682b64C9fd65D460bFed264F"
     );
-    const tx = await n8.sendTransaction({
+    const tx = await owner.sendTransaction({
       to: ac019.address,
       value: ethers.utils.parseEther("1.0"),
     });
     const AxolittlesStaking = await ethers.getContractFactory(
       "AxolittlesStaking"
     );
-    stakingContract = await AxolittlesStaking.deploy("15000000000000000");
+    stakingContract = await AxolittlesStaking.deploy(
+      AXOLITTLES_ADDRESS,
+      TOKEN_ADDRESS,
+      "15000000000000000"
+    );
     axolittlesContract = await ethers.getContractAt(
       "Axolittles",
       AXOLITTLES_ADDRESS
@@ -125,15 +130,14 @@ describe("AxolittlesStaking", () => {
       await axolittlesContract.balanceOf(stakingContract.address)
     ).to.equal(0);
   });
-  /* todo: is broken
+
   //test what happens when staking nothing
   it("should fail when staking nothing", async () => {
-    expect(function() {
-      await stakingContract.connect(n8).stake("");
-    })
-      .to.throw(Error);
+    await expect(stakingContract.connect(n8).stake([])).to.be.revertedWith(
+      "Nothing to stake"
+    );
   });
-  */
+
   //3. test what happens when staking items not owned
   it("should fail when staking items not owned", async () => {
     await expect(
@@ -187,15 +191,14 @@ describe("AxolittlesStaking", () => {
       await axolittlesContract.balanceOf(stakingContract.address)
     ).to.equal(3);
   });
-  /* todo: fix this
+
   //2. test what happens when unstaking nothing
   it("should fail when unstaking nothing", async () => {
-    expect(function() {
-      await stakingContract.connect(n8).unstake("");
-    })
-      .to.throw(Error);
+    await expect(stakingContract.connect(n8).unstake([])).to.be.revertedWith(
+      "Nothing to unstake"
+    );
   });
-  */
+
   //3. test what happens when unstaking items not owned and not in contract
   it("should fail when staking items not owned and not in contract", async () => {
     await expect(
@@ -236,14 +239,14 @@ describe("AxolittlesStaking", () => {
 
   //CLAIMING TESTS:
   //1. perform claim when nothing staked before
-  it("should fail claim when no axos staked, no bubbles generated", async () => {
+  it("should fail claim when no axos staked, no $BUBBLE generated", async () => {
     await expect(stakingContract.connect(n8).claim()).to.be.revertedWith(
       "Nothing to claim"
     );
   });
 
-  //3. perform claim when axos unstaked, but bubbles remain
-  it("should allow claim with bubbles remaining but axos unstaked", async () => {
+  //3. perform claim when axos unstaked, but $BUBBLE remains
+  it("should allow claim with $BUBBLE remaining but axos unstaked", async () => {
     //stake
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
@@ -261,8 +264,8 @@ describe("AxolittlesStaking", () => {
       .withArgs(n8.address, "90000000000000000");
   });
 
-  //4. perform claim when axos staked, bubbles generated
-  it("should allow claim when axos staked, bubbles generated", async () => {
+  //4. perform claim when axos staked, $BUBBLE generated
+  it("should allow claim when axos staked, $BUBBLE generated", async () => {
     //stake
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
@@ -278,7 +281,7 @@ describe("AxolittlesStaking", () => {
 
   //CHECKREWARDS TESTS:
   //1. check reward  on user without axos staked
-  it("should check reward when bubbles remain, axos unstaked", async () => {
+  it("should check reward when $BUBBLE remaining, axos unstaked", async () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
@@ -296,7 +299,7 @@ describe("AxolittlesStaking", () => {
     ).to.equal(0);
   });
   //2. check reward on user with axos staked
-  it("should check reward when bubbles remain, axos staked", async () => {
+  it("should check reward when $BUBBLE remaining, axos staked", async () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
@@ -310,12 +313,19 @@ describe("AxolittlesStaking", () => {
       await stakingContract.connect(ac019).checkReward(ac019.address)
     ).to.equal(0);
   });
-  it("todo: Manually calculate bubble rewards and check against claim/checkRewards for accuracy", async () => {
+  it("todo: Manually calculate $BUBBLE rewards and check against claim/checkRewards for accuracy", async () => {
     assert.fail("actual", "expected", "Test not implemented yet");
   });
   //MIGRATION FUNCTION TESTS:
   //1. Test function to give rewards to original stakers w/ merkle tree implementation
   //2. Test axo migration helper function
+  it("should transfer axo from old contract to new one", async () => {
+    await stakingContract.connect(n8).migrationHelper([5555]);
+  });
+  //when user doesnt own the axo in old contract
+  it("should not transfer axo from old contract to new one when not owned", async () => {
+    assert.fail("actual", "expected", "Test not implemented yet");
+  });
 });
 
 //GAS TESTS: (comparison of deployment and all functions using hardhat)
