@@ -1,9 +1,10 @@
 const { expect, assert } = require("chai");
 const { network, ethers } = require("hardhat");
 const { beforeEach } = require("mocha");
+const { start } = require("repl");
 const AXOLITTLES_ADDRESS = "0xf36446105fF682999a442b003f2224BcB3D82067";
 const TOKEN_ADDRESS = "0x58f46F627C88a3b217abc80563B9a726abB873ba";
-const EMISSION_AMOUNT = "15000000000000000";
+const EMISSION_AMOUNT = "15";
 
 //todo: check how reverts work when failure partway through function, especially w/ regard to transfers
 describe("AxolittlesStaking", () => {
@@ -156,7 +157,7 @@ describe("AxolittlesStaking", () => {
   });
 
   //3. test what happens when unstaking items not owned and not in contract
-  it("should fail when staking items not owned and not in contract", async () => {
+  it("should fail when unstaking items not owned and not in contract", async () => {
     await expect(
       stakingContract.connect(n8).unstake([1, 2, 3])
     ).to.be.revertedWith("Not your axo!");
@@ -178,6 +179,7 @@ describe("AxolittlesStaking", () => {
       await axolittlesContract.balanceOf(stakingContract.address)
     ).to.equal(1);
   });
+
   //4. test legitmate unstake without delay
   it("should pass with legitimate unstake without delay", async () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
@@ -206,17 +208,27 @@ describe("AxolittlesStaking", () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
-    // Advance time 1 week
-    await hre.ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
-    await network.provider.send("evm_mine");
+    // Advance time 10 blocks
+    for (let i = 0; i < 10; i++) {
+      await ethers.provider.send("evm_mine");
+    }
     //unstake
     await expect(stakingContract.connect(n8).unstake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Unstake")
       .withArgs(n8.address, [4504, 7027, 5803]);
+    const startBlock = (await stakingContract.stakers(n8.address))
+      .blockSinceLastCalc;
+    const currBlock = (await ethers.provider.getBlock("latest")).number;
+    const n8calcedReward = (await stakingContract.stakers(n8.address))
+      .calcedReward;
+    const n8NumStaked = (await stakingContract.stakers(n8.address)).numStaked;
+    const n8Reward = n8calcedReward.add(
+      n8NumStaked.mul(EMISSION_AMOUNT * (currBlock + 1 - startBlock))
+    );
     //claim
     await expect(stakingContract.connect(n8).claim())
       .to.emit(stakingContract, "Claim")
-      .withArgs(n8.address, "90000000000000000");
+      .withArgs(n8.address, `${n8Reward}`);
   });
 
   //4. perform claim when axos staked, $BUBBLE generated
@@ -225,13 +237,23 @@ describe("AxolittlesStaking", () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
-    // Advance time 1 week
-    await hre.ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
-    await network.provider.send("evm_mine");
+    // Advance 10 blocks
+    for (let i = 0; i < 10; i++) {
+      await ethers.provider.send("evm_mine");
+    }
+    const startBlock = (await stakingContract.stakers(n8.address))
+      .blockSinceLastCalc;
+    const currBlock = (await ethers.provider.getBlock("latest")).number;
+    const n8calcedReward = (await stakingContract.stakers(n8.address))
+      .calcedReward;
+    const n8NumStaked = (await stakingContract.stakers(n8.address)).numStaked;
+    const n8Reward = n8calcedReward.add(
+      n8NumStaked.mul(EMISSION_AMOUNT * (currBlock + 1 - startBlock))
+    );
     //claim
     await expect(stakingContract.connect(n8).claim())
       .to.emit(stakingContract, "Claim")
-      .withArgs(n8.address, "90000000000000000");
+      .withArgs(n8.address, `${n8Reward}`);
   });
 
   //CHECKREWARDS TESTS:
@@ -240,15 +262,26 @@ describe("AxolittlesStaking", () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
-    // Advance time 1 week
-    await hre.ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
-    await network.provider.send("evm_mine");
+    // Advance 1000 blocks
+    for (let i = 0; i < 1000; i++) {
+      await ethers.provider.send("evm_mine");
+    }
     await expect(stakingContract.connect(n8).unstake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Unstake")
       .withArgs(n8.address, [4504, 7027, 5803]);
-    expect(await stakingContract.connect(n8).checkReward(n8.address)).to.equal(
-      "90000000000000000"
+    const startBlock = (await stakingContract.stakers(n8.address))
+      .blockSinceLastCalc;
+    const currBlock = (await ethers.provider.getBlock("latest")).number;
+    const n8calcedReward = (await stakingContract.stakers(n8.address))
+      .calcedReward;
+    const n8NumStaked = (await stakingContract.stakers(n8.address)).numStaked;
+    const n8Reward = n8calcedReward.add(
+      n8NumStaked * EMISSION_AMOUNT * (currBlock - startBlock)
     );
+    expect(await stakingContract.connect(n8).checkReward(n8.address)).to.equal(
+      `${n8Reward}`
+    );
+
     expect(
       await stakingContract.connect(ac019).checkReward(ac019.address)
     ).to.equal(0);
@@ -258,29 +291,24 @@ describe("AxolittlesStaking", () => {
     await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
       .to.emit(stakingContract, "Stake")
       .withArgs(n8.address, [4504, 7027, 5803]);
-    // Advance time 1 week
-    await hre.ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
-    await network.provider.send("evm_mine");
+    // Advance 1000 blocks
+    for (let i = 0; i < 1000; i++) {
+      await ethers.provider.send("evm_mine");
+    }
+    //start block should be close to 14083004
+    const startBlock = (await stakingContract.stakers(n8.address))
+      .blockSinceLastCalc;
+    //currBlock should be close to startBlock + 1000 = 14084004
+    const currBlock = (await ethers.provider.getBlock("latest")).number;
+    const n8Reward = 3 * EMISSION_AMOUNT * (currBlock - startBlock);
     expect(await stakingContract.connect(n8).checkReward(n8.address)).to.equal(
-      "45000000000000000"
+      `${n8Reward}`
     );
     expect(
       await stakingContract.connect(ac019).checkReward(ac019.address)
     ).to.equal(0);
   });
-  it("todo: Manually calculate $BUBBLE rewards and check against claim/checkRewards for accuracy", async () => {
-    assert.fail("actual", "expected", "Test not implemented yet");
-  });
-  //MIGRATION FUNCTION TESTS:
-  //1. Test function to give rewards to original stakers w/ merkle tree implementation
-  //2. Test axo migration helper function
-  it("should transfer axo from old contract to new one", async () => {
-    await stakingContract.connect(n8).migrationHelper([5555]);
-  });
-  //when user doesnt own the axo in old contract
-  it("should not transfer axo from old contract to new one when not owned", async () => {
-    assert.fail("actual", "expected", "Test not implemented yet");
-  });
+  //3. check stake -> ffwd time -> stake -> checkreward, see if calculation is correct
 });
 
 //GAS TESTS: (comparison of deployment and all functions using hardhat)

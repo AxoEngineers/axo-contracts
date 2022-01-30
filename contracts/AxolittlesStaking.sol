@@ -16,7 +16,6 @@ interface IBubbles {
 contract AxolittlesStaking is Ownable {
   address public AXOLITTLES;
   address public TOKEN;
-  bytes32 public merkleRoot = 0;
   bool public stakingPaused;
 
   // Amount of $BUBBLE generated each block, contains 18 decimals.
@@ -25,17 +24,17 @@ contract AxolittlesStaking is Ownable {
   /// @notice struct per owner address to store:
   /// a. previously calced rewards, b. number staked, and block since last reward calculation.
   struct staker {
-    // previously calculated rewards
-    uint256 calcedReward;
     // number of axolittles currently staked
     uint256 numStaked;
     // block since calcedReward was last updated
     uint256 blockSinceLastCalc;
+    // previously calculated rewards
+    uint256 calcedReward;
   }
 
-  mapping(address => staker) internal stakers;
-  mapping(uint256 => address) internal stakedAxos;
-  mapping(address => bool) internal migrationClaimed;
+  /// @dev setting as public for now, to make testing easier
+  mapping(address => staker) public stakers;
+  mapping(uint256 => address) public stakedAxos;
 
   constructor(
     address _axolittlesAddress,
@@ -51,7 +50,7 @@ contract AxolittlesStaking is Ownable {
   event Stake(address indexed owner, uint256[] tokenIds);
   event Unstake(address indexed owner, uint256[] tokenIds);
   event Claim(address indexed owner, uint256 totalReward);
-  event ClaimMigrationReward(address indexed owner, uint256 _rewardAmount);
+  event AdminTransfer(uint256[] tokenIds);
 
   /// @notice Function to stake axos. Transfers axos from sender to this contract.
   function stake(uint256[] memory tokenIds) external {
@@ -70,6 +69,7 @@ contract AxolittlesStaking is Ownable {
   /// @notice Function to unstake axos. Transfers axos from this contract back to sender address.
   function unstake(uint256[] memory tokenIds) external {
     require(tokenIds.length > 0, "Nothing to unstake");
+    require(tokenIds.length <= stakers[msg.sender].numStaked, "Not your axo!");
     stakers[msg.sender].calcedReward = checkReward(msg.sender);
     stakers[msg.sender].numStaked -= tokenIds.length;
     stakers[msg.sender].blockSinceLastCalc = block.number;
@@ -91,26 +91,6 @@ contract AxolittlesStaking is Ownable {
     IBubbles(TOKEN).mint(msg.sender, totalReward);
     emit Claim(msg.sender, totalReward);
   }
-
-  /** 
-    todo: claim migration rewards function
-    pass in data via merkle root in format of addreess/$BUBBLE owed
-    keep mapping(address => bool) rewardsTracker to track who has claimed already
-  
-  function claimMigrationReward(
-    uint256 _rewardAmount,
-    bytes32[] calldata merkleProof
-  ) external {
-    require(!migrationClaimed[msg.sender], "Already claimed!");
-    bytes32 node = keccak256(abi.encodePacked(msg.sender, _rewardAmount)); //check both address and amount
-    require(
-      MerkleProof.verify(merkleProof, merkleRoot, node),
-      "Verification failed!"
-    );
-    IBubbles(TOKEN).mint(msg.sender, _rewardAmount);
-    emit ClaimMigrationReward(msg.sender, _rewardAmount);
-  }
-  */
 
   /// @notice Function to check rewards per staker address
   function checkReward(address _staker_address) public view returns (uint256) {
@@ -142,18 +122,15 @@ contract AxolittlesStaking is Ownable {
     stakingPaused = _isPaused;
   }
 
-  /* WIP:
   /// @notice Function for admin to transfer axos out of contract back to original owner
-  function adminTransfer(uint256[] memory tokenIds) external onlyOwner{
-    require(tokenIds.length > 0, "Nothing to unstake"); //cant calc here, but will be really expensive to calc these inside loop
-    stakers[msg.sender].calcedReward = checkReward(msg.sender);
+  function adminTransfer(uint256[] memory tokenIds) external onlyOwner {
+    require(tokenIds.length > 0, "Nothing to unstake");
     for (uint256 i = 0; i < tokenIds.length; i++) {
+      address owner = stakedAxos[tokenIds[i]];
+      stakers[owner].numStaked--;
       delete stakedAxos[tokenIds[i]];
-      IERC721(AXOLITTLES).transferFrom(address(this), msg.sender, tokenIds[i]);
+      IERC721(AXOLITTLES).transferFrom(address(this), owner, tokenIds[i]);
     }
-    stakers[msg.sender].numStaked -= tokenIds.length;
-    stakers[msg.sender].blockSinceLastCalc = block.number;
-    emit Unstake(msg.sender, tokenIds);
+    emit AdminTransfer(tokenIds);
   }
-  */
 }
