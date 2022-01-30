@@ -56,7 +56,7 @@ contract AxolittlesStaking is Ownable {
   function stake(uint256[] memory tokenIds) external {
     require(!stakingPaused, "Staking is paused");
     require(tokenIds.length > 0, "Nothing to stake");
-    stakers[msg.sender].calcedReward = checkReward(msg.sender);
+    stakers[msg.sender].calcedReward = _checkRewardInternal(msg.sender);
     stakers[msg.sender].numStaked += tokenIds.length;
     stakers[msg.sender].blockSinceLastCalc = block.number;
     for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -70,7 +70,7 @@ contract AxolittlesStaking is Ownable {
   function unstake(uint256[] memory tokenIds) external {
     require(tokenIds.length > 0, "Nothing to unstake");
     require(tokenIds.length <= stakers[msg.sender].numStaked, "Not your axo!");
-    stakers[msg.sender].calcedReward = checkReward(msg.sender);
+    stakers[msg.sender].calcedReward = _checkRewardInternal(msg.sender);
     stakers[msg.sender].numStaked -= tokenIds.length;
     stakers[msg.sender].blockSinceLastCalc = block.number;
     for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -84,7 +84,7 @@ contract AxolittlesStaking is Ownable {
   /// @notice Function to claim $BUBBLE.
   function claim() external {
     //todo: ownership and other checks here
-    uint256 totalReward = checkReward(msg.sender);
+    uint256 totalReward = _checkRewardInternal(msg.sender);
     require(totalReward > 0, "Nothing to claim");
     stakers[msg.sender].blockSinceLastCalc = block.number;
     stakers[msg.sender].calcedReward = 0;
@@ -93,8 +93,20 @@ contract AxolittlesStaking is Ownable {
   }
 
   /// @notice Function to check rewards per staker address
-  function checkReward(address _staker_address) public view returns (uint256) {
-    //todo:
+  function checkReward(address _staker_address)
+    external
+    view
+    returns (uint256)
+  {
+    return _checkRewardInternal(_staker_address);
+  }
+
+  /// @notice Function to check rewards per staker address
+  function _checkRewardInternal(address _staker_address)
+    internal
+    view
+    returns (uint256)
+  {
     return (stakers[_staker_address].calcedReward +
       stakers[_staker_address].numStaked *
       emissionPerBlock *
