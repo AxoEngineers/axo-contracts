@@ -4,7 +4,8 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-    /** 
+
+/** 
     @title Contract for Bubbles token
     @author Axolittles Team
     @notice BUBBLE token generated from axolittle staking
@@ -15,7 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract Bubbles is ERC20("Bubbles", "BUBBLE"), Ownable {
     /// @dev addresses allowed to mint bubbles, currently only set to address of AxolittlesStaking contract
     mapping(address => bool) public minters;
-    
+
     constructor() {}
 
     /**
@@ -23,7 +24,7 @@ contract Bubbles is ERC20("Bubbles", "BUBBLE"), Ownable {
     @param recipient address where Bubbles are sent
     @param amount number of bubbles(including 18 decimals)
     */
-    function mint(address recipient, uint amount) external {
+    function mint(address recipient, uint256 amount) external {
         require(minters[msg.sender], "Not approved to mint");
         _mint(recipient, amount);
     }
@@ -32,7 +33,7 @@ contract Bubbles is ERC20("Bubbles", "BUBBLE"), Ownable {
     @notice function to burn bubbles owned by sender
     @param amount number of bubbles(including 18 decimals) to burn
     */
-    function burn(uint amount) external {
+    function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
 

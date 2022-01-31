@@ -4,7 +4,6 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
-const { syncBuiltinESMExports } = require("module");
 require("dotenv").config();
 
 async function main() {
@@ -16,24 +15,14 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const AxolittlesStaking = await hre.ethers.getContractFactory(
-    "AxolittlesStaking"
-  );
-  const axolittlesstaking = await AxolittlesStaking.deploy(
-    "0x1e7e3293b21e4f5562d249b801379e92fb585ab2",
-    "0x66a989cb709dbc8e479b90298479f89816acd6e1",
-    "15000000000000000"
-  );
-  await axolittlesstaking.deployed();
+  const Bubbles = await hre.ethers.getContractFactory("Bubbles");
+  const bubbles = await Bubbles.deploy();
+  await bubbles.deployed();
 
-  console.log("Staking Contract deployed to:", axolittlesstaking.address);
+  console.log("Bubbles contract deployed to:", bubbles.address);
   await hre.run("verify:verify", {
-    address: axolittlesstaking.address,
-    constructorArguments: [
-      process.env.AXOLITTLES_ADDRESS,
-      process.env.TOKEN_ADDRESS,
-      process.env.EMISSION_AMOUNT,
-    ],
+    address: bubbles.address,
+    constructorArguments: [],
   });
 }
 
