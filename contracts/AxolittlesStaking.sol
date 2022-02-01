@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /// @title Interface to interact with Bubbles contract.
 interface IBubbles {
@@ -14,12 +13,14 @@ interface IBubbles {
 /// @author The Axolittles Team
 /// @title Contract for staking axos to receive $BUBBLE
 contract AxolittlesStaking is Ownable {
-  address public AXOLITTLES;
-  address public TOKEN;
+  address public AXOLITTLES = 0xf36446105fF682999a442b003f2224BcB3D82067;
+  address public TOKEN = 0x58f46F627C88a3b217abc80563B9a726abB873ba;
   bool public stakingPaused;
-
+  bool public isPositiveSum = true;
+  uint64 internal stakeTarget = 6000;
   // Amount of $BUBBLE generated each block, contains 18 decimals.
-  uint256 public emissionPerBlock;
+  uint256 public emissionPerBlock = 15; //temporarily 15 to avoid using bignumber in tests
+  uint256 internal totalStaked;
 
   /// @notice struct per owner address to store:
   /// a. previously calced rewards, b. number staked, and block since last reward calculation.
@@ -32,25 +33,16 @@ contract AxolittlesStaking is Ownable {
     uint256 calcedReward;
   }
 
-  /// @dev setting as public for now, to make testing easier
   mapping(address => staker) public stakers;
-  mapping(uint256 => address) internal stakedAxos;
+  mapping(uint256 => address) public stakedAxos;
 
-  constructor(
-    address _axolittlesAddress,
-    address _tokenAddress,
-    uint256 _emissionPerBlock
-  ) {
-    AXOLITTLES = _axolittlesAddress;
-    TOKEN = _tokenAddress;
-    emissionPerBlock = _emissionPerBlock;
-    stakingPaused = false;
-  }
+  constructor() {}
 
   event Stake(address indexed owner, uint256[] tokenIds);
   event Unstake(address indexed owner, uint256[] tokenIds);
   event Claim(address indexed owner, uint256 totalReward);
   event SetStakingPaused(bool _stakingPaused);
+  event SetPositiveSum(bool _isPositiveSum, uint64 stakeTarget);
   event AdminTransfer(uint256[] tokenIds);
 
   /// @notice Function to stake axos. Transfers axos from sender to this contract.
@@ -60,6 +52,7 @@ contract AxolittlesStaking is Ownable {
     stakers[msg.sender].calcedReward = _checkRewardInternal(msg.sender);
     stakers[msg.sender].numStaked += tokenIds.length;
     stakers[msg.sender].blockSinceLastCalc = block.number;
+    totalStaked += tokenIds.length;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       IERC721(AXOLITTLES).transferFrom(msg.sender, address(this), tokenIds[i]);
       stakedAxos[tokenIds[i]] = msg.sender;
@@ -74,6 +67,7 @@ contract AxolittlesStaking is Ownable {
     stakers[msg.sender].calcedReward = _checkRewardInternal(msg.sender);
     stakers[msg.sender].numStaked -= tokenIds.length;
     stakers[msg.sender].blockSinceLastCalc = block.number;
+    totalStaked -= tokenIds.length;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(msg.sender == stakedAxos[tokenIds[i]], "Not your axo!");
       delete stakedAxos[tokenIds[i]];
@@ -108,10 +102,14 @@ contract AxolittlesStaking is Ownable {
     view
     returns (uint256)
   {
-    return (stakers[_staker_address].calcedReward +
+    uint256 totalReward = stakers[_staker_address].calcedReward +
       stakers[_staker_address].numStaked *
       emissionPerBlock *
-      (block.number - stakers[_staker_address].blockSinceLastCalc));
+      (block.number - stakers[_staker_address].blockSinceLastCalc);
+    if (isPositiveSum) {
+      totalReward *= (1 + (totalStaked / stakeTarget));
+    }
+    return totalReward;
   }
 
   //ADMIN FUNCTIONS
@@ -136,9 +134,20 @@ contract AxolittlesStaking is Ownable {
     emit SetStakingPaused(stakingPaused);
   }
 
+  ///@notice Function to turn on positive sum staking
+  function setPositiveSum(bool _isPositiveSum, uint64 _stakeTarget)
+    external
+    onlyOwner
+  {
+    isPositiveSum = _isPositiveSum;
+    stakeTarget = _stakeTarget;
+    emit SetPositiveSum(isPositiveSum, stakeTarget);
+  }
+
   /// @notice Function for admin to transfer axos out of contract back to original owner
   function adminTransfer(uint256[] memory tokenIds) external onlyOwner {
     require(tokenIds.length > 0, "Nothing to unstake");
+    totalStaked -= tokenIds.length;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       address owner = stakedAxos[tokenIds[i]];
       require(owner != address(0), "Axo not found");
