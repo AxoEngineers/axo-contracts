@@ -34,7 +34,7 @@ contract AxolittlesStaking is Ownable {
 
   /// @dev setting as public for now, to make testing easier
   mapping(address => staker) public stakers;
-  mapping(uint256 => address) public stakedAxos;
+  mapping(uint256 => address) internal stakedAxos;
 
   constructor(
     address _axolittlesAddress,
@@ -50,6 +50,7 @@ contract AxolittlesStaking is Ownable {
   event Stake(address indexed owner, uint256[] tokenIds);
   event Unstake(address indexed owner, uint256[] tokenIds);
   event Claim(address indexed owner, uint256 totalReward);
+  event SetStakingPaused(bool _stakingPaused);
   event AdminTransfer(uint256[] tokenIds);
 
   /// @notice Function to stake axos. Transfers axos from sender to this contract.
@@ -101,7 +102,7 @@ contract AxolittlesStaking is Ownable {
     return _checkRewardInternal(_staker_address);
   }
 
-  /// @notice Function to check rewards per staker address
+  /// @notice Internal function to check rewards per staker address
   function _checkRewardInternal(address _staker_address)
     internal
     view
@@ -130,8 +131,9 @@ contract AxolittlesStaking is Ownable {
   }
 
   /// @notice Function to prevent further staking
-  function pauseStaking(bool _isPaused) external onlyOwner {
+  function setStakingPaused(bool _isPaused) external onlyOwner {
     stakingPaused = _isPaused;
+    emit SetStakingPaused(stakingPaused);
   }
 
   /// @notice Function for admin to transfer axos out of contract back to original owner
@@ -139,6 +141,7 @@ contract AxolittlesStaking is Ownable {
     require(tokenIds.length > 0, "Nothing to unstake");
     for (uint256 i = 0; i < tokenIds.length; i++) {
       address owner = stakedAxos[tokenIds[i]];
+      require(owner != address(0), "Axo not found");
       stakers[owner].numStaked--;
       delete stakedAxos[tokenIds[i]];
       IERC721(AXOLITTLES).transferFrom(address(this), owner, tokenIds[i]);

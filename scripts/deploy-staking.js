@@ -20,8 +20,8 @@ async function main() {
     "AxolittlesStaking"
   );
   const axolittlesstaking = await AxolittlesStaking.deploy(
-    "0x1e7e3293b21e4f5562d249b801379e92fb585ab2",
-    "0x66a989cb709dbc8e479b90298479f89816acd6e1",
+    AXOLITTLES_ADDRESS,
+    TOKEN_ADDRESS,
     "15000000000000000"
   );
   await axolittlesstaking.deployed();
