@@ -11,6 +11,7 @@ describe("AxolittlesStaking", () => {
   //deploy contract before each test
   let owner, addr1, n8, ac019;
   let stakingContract, axolittlesContract, bubblesContract;
+  //reset network state
   beforeEach(async () => {
     await ethers.provider.send("hardhat_reset", [
       {
@@ -25,6 +26,7 @@ describe("AxolittlesStaking", () => {
       14083004
     );
     [owner, addr1] = await ethers.getSigners();
+    //impersonate n8 and ac019
     await network.provider.request({
       method: "hardhat_impersonateAccount",
       params: ["0xb0151D256ee16d847F080691C3529F316b2D54b3"],
@@ -37,10 +39,16 @@ describe("AxolittlesStaking", () => {
     ac019 = await ethers.getSigner(
       "0x8Ada5F216eBA7612682b64C9fd65D460bFed264F"
     );
+    //send n8 and ac019 some $$$
     await owner.sendTransaction({
       to: ac019.address,
-      value: ethers.utils.parseEther("1.0"),
+      value: ethers.utils.parseEther("10.0"),
     });
+    await owner.sendTransaction({
+      to: n8.address,
+      value: ethers.utils.parseEther("10.0"),
+    });
+    //deploy new staking contract
     const AxolittlesStaking = await ethers.getContractFactory(
       "AxolittlesStaking"
     );
@@ -49,20 +57,41 @@ describe("AxolittlesStaking", () => {
       TOKEN_ADDRESS,
       EMISSION_AMOUNT
     );
+    await stakingContract.deployed();
+    //deploy old staking contract
+    const OldAxolittlesStaking = await ethers.getContractFactory(
+      "old_AxolittlesStaking"
+    );
+    oldStakingContract = await OldAxolittlesStaking.deploy(
+      TOKEN_ADDRESS,
+      EMISSION_AMOUNT
+    );
+    await stakingContract.deployed();
+    //get existing axolittles contract
     axolittlesContract = await ethers.getContractAt(
       "Axolittles",
       AXOLITTLES_ADDRESS
     );
+    //get existing bubbles contract
     bubblesContract = await ethers.getContractAt("Bubbles", TOKEN_ADDRESS);
-    await stakingContract.deployed();
+    //allow new staking contract to mint bubbles
     bubblesContract.connect(n8).setMinter(stakingContract.address, 1);
+    //allow old staking contract to mint bubbles
+    bubblesContract.connect(n8).setMinter(oldStakingContract.address, 1);
+    //allow staking contract to transfer axos
     await axolittlesContract
       .connect(n8)
       .setApprovalForAll(stakingContract.address, 1);
     await axolittlesContract
       .connect(ac019)
       .setApprovalForAll(stakingContract.address, 1);
-    //console.log("Contract deployed to:", stakingContract.address);
+    //allow old staking contract to transfer axos
+    await axolittlesContract
+      .connect(n8)
+      .setApprovalForAll(oldStakingContract.address, 1);
+    await axolittlesContract
+      .connect(ac019)
+      .setApprovalForAll(oldStakingContract.address, 1);
   });
   //AUX CONTRACT CHECKS:
   it("should fork existing contract state", async () => {
@@ -85,24 +114,9 @@ describe("AxolittlesStaking", () => {
     expect(await stakingContract.owner()).to.equal(owner.address);
   });
 
-  //ADMIN TESTS:
-  //Change emissions when not owner
-  it("Should not allow emissions change when not set by owner", async () => {
-    await expect(
-      stakingContract.connect(addr1).setEmissionPerBlock(0)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-  });
-
-  //Change emissions when owner
-  it("should allow emissions change when set by owner", async () => {
-    await stakingContract.setEmissionPerBlock(0);
-    expect(await stakingContract.emissionPerBlock()).to.equal("0");
-  });
-
   //STAKING TESTS: (for each test, check all state variables)
   //test what happens if try to stake mix of tokenIDs owned + tokenIDs not owned
   //a. owned first, then not owned
-
   it("should fail when staking mixed owned then not owned together", async () => {
     await expect(
       stakingContract.connect(n8).stake([4504, 7027, 5803, 1, 2, 3])
@@ -308,11 +322,183 @@ describe("AxolittlesStaking", () => {
       await stakingContract.connect(ac019).checkReward(ac019.address)
     ).to.equal(0);
   });
-  //3. check stake -> ffwd time -> stake -> checkreward, see if calculation is correct
-});
 
-//GAS TESTS: (comparison of deployment and all functions using hardhat)
-//1. Old Contract
-//2. New Contract w/ autoclaim each stake/unstake (no storage of calcedReward)
-//3. New Contract without autoclaim (includes calcedReward)
-//4. New Contract with stakedAxos reimplemented inside staker struct
+  //ADMIN TESTS:
+  //1. Test setAxolittlesAddress
+  it("should allow axolittles address change when set by owner", async () => {
+    await stakingContract.setAxolittlesAddress(bubblesContract.address);
+    expect(await stakingContract.AXOLITTLES()).to.equal(
+      bubblesContract.address
+    );
+  });
+  //2. Test setTokenAddress
+  it("should allow token address change when set by owner", async () => {
+    await stakingContract.setTokenAddress(axolittlesContract.address);
+    expect(await stakingContract.TOKEN()).to.equal(axolittlesContract.address);
+  });
+  //3. Change emissions when not owner
+  it("Should not allow emissions change when not set by owner", async () => {
+    await expect(
+      stakingContract.connect(addr1).setEmissionPerBlock(0)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+  //4. Change emissions when owner
+  it("should allow emissions change when set by owner", async () => {
+    await stakingContract.setEmissionPerBlock(0);
+    expect(await stakingContract.emissionPerBlock()).to.equal("0");
+  });
+  //5. Test pauseStaking
+  it("should fail when staking after paused", async () => {
+    await stakingContract.setStakingPaused(true);
+    await expect(
+      stakingContract.connect(n8).stake([1, 2, 3])
+    ).to.be.revertedWith("Staking is paused");
+  });
+  //6. Test admin transfer
+  it("should admin transfer when called by owner", async () => {
+    await expect(stakingContract.connect(ac019).stake([8052]))
+      .to.emit(stakingContract, "Stake")
+      .withArgs(ac019.address, [8052]);
+    expect(
+      await axolittlesContract.balanceOf(stakingContract.address)
+    ).to.equal(1);
+    await expect(stakingContract.adminTransfer([8052]))
+      .to.emit(stakingContract, "AdminTransfer")
+      .withArgs([8052]);
+    expect(
+      await axolittlesContract.balanceOf(stakingContract.address)
+    ).to.equal(0);
+  });
+
+  //7. Test admin Transfer w/ already removed axo
+  it("should fail admin Transfer w/ already removed axo", async () => {
+    await expect(stakingContract.connect(n8).stake([4504, 7027, 5803]))
+      .to.emit(stakingContract, "Stake")
+      .withArgs(n8.address, [4504, 7027, 5803]);
+    await expect(stakingContract.connect(n8).unstake([4504, 7027]))
+      .to.emit(stakingContract, "Unstake")
+      .withArgs(n8.address, [4504, 7027]);
+    await expect(stakingContract.adminTransfer([4504])).to.be.revertedWith(
+      "Axo not found"
+    );
+  });
+
+  //GAS TESTS: (comparison of deployment and all functions using hardhat)
+  //1. Test Whale Stake
+  it("should test whale stake", async () => {
+    await expect(
+      stakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    )
+      .to.emit(stakingContract, "Stake")
+      .withArgs(
+        n8.address,
+        [
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ]
+      );
+  });
+  //2. Test Whale Unstake
+  it("should test whale unstake", async () => {
+    await expect(
+      stakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    )
+      .to.emit(stakingContract, "Stake")
+      .withArgs(
+        n8.address,
+        [
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ]
+      );
+    await stakingContract
+      .connect(n8)
+      .unstake([
+        4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690, 4253,
+        8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+      ]);
+  });
+  //3. Test Whale Claim
+  it("should test whale claim", async () => {
+    await expect(
+      stakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    )
+      .to.emit(stakingContract, "Stake")
+      .withArgs(
+        n8.address,
+        [
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ]
+      );
+    // Advance 1000 blocks
+    for (let i = 0; i < 1000; i++) {
+      await ethers.provider.send("evm_mine");
+    }
+    await stakingContract.connect(n8).claim();
+  });
+  //1. Test Whale Stake (Old Contract)
+  it("should test whale stake (Old Contract)", async () => {
+    await expect(
+      oldStakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    ).to.emit(oldStakingContract, "Stake");
+  });
+  //2. Test Whale Unstake (Old Contract)
+  it("should test whale unstake (Old Contract)", async () => {
+    await expect(
+      oldStakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    ).to.emit(oldStakingContract, "Stake");
+    await oldStakingContract
+      .connect(n8)
+      .unstake([
+        4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690, 4253,
+        8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+      ]);
+  });
+  //3. Test Whale Claim (Old Contract)
+  it("should test whale claim (Old Contract)", async () => {
+    await expect(
+      oldStakingContract
+        .connect(n8)
+        .stake([
+          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
+          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+        ])
+    ).to.emit(oldStakingContract, "Stake");
+    // Advance 1000 blocks
+    for (let i = 0; i < 1000; i++) {
+      await ethers.provider.send("evm_mine");
+    }
+    await oldStakingContract
+      .connect(n8)
+      .claim([
+        4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690, 4253,
+        8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
+      ]);
+  });
+});

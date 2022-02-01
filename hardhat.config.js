@@ -2,7 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
-require("hardhat-docgen");
+require("hardhat-gas-reporter");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -22,7 +22,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 
 module.exports = {
-  defaultNetwork: "rinkeby",
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
       forking: {
@@ -54,9 +54,10 @@ module.exports = {
       },
     },
   },
-  docgen: {
-    path: "./docs",
-    clear: true,
-    runOnCompile: true,
+  gasReporter: {
+    currency: "USD",
+    token: "ETH",
+    gasPrice: 120,
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
 };
