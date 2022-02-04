@@ -8,43 +8,43 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /// @title Interface to interact with Bubbles contract.
 /// @dev can be used with IBubbles(contractAddress).functionName(params)
 interface IBubbles {
-  function mint(address recipient, uint256 amount) external;
+    function mint(address recipient, uint256 amount) external;
 }
 
 /// @title Contract for staking axos to receive BUBBLE
 /// @author Axolittles Team
 /// @dev Staking contract interacts with Axolittles contract and Bubbles contract
 contract old_AxolittlesStaking is Ownable {
-  address public constant AXOLITTLES =
-    0xf36446105fF682999a442b003f2224BcB3D82067;
-  address public immutable TOKEN;
+    address public constant AXOLITTLES =
+        0xf36446105fF682999a442b003f2224BcB3D82067;
+    address public immutable TOKEN;
 
-  /** 
+    /** 
     @notice Amount of bubbles generated each block. 
     Imitates relationship between Ether and Wei, contains 18 decimals.
     User representation is balance/(10 ** 18).
     Average block time for eth is 12-14 seconds.
     */
-  uint256 public emissionPerBlock;
-  /**
+    uint256 public emissionPerBlock;
+    /**
     @notice These two are set in tandem, so if stakeBlock is 0 then stakeOwner will be address(0x0)
     We check stakeOwner first so checking stakeBlock is unnecessary
     @dev Does this need to be public? Could set as internal
     */
-  mapping(uint256 => uint256) public stakeBlock; // For each tokenId, the block number when staking began. 0 if unstaked.
-  mapping(uint256 => address) public stakeOwner; // For each tokenId, the owner of it
+    mapping(uint256 => uint256) public stakeBlock; // For each tokenId, the block number when staking began. 0 if unstaked.
+    mapping(uint256 => address) public stakeOwner; // For each tokenId, the owner of it
 
-  // declare Stake and Unstake event. Emits are stored on blockchain and applications can listen for them.
-  event Stake(address indexed owner, uint256 tokenId);
-  event Unstake(address indexed owner, uint256 tokenId);
+    // declare Stake and Unstake event. Emits are stored on blockchain and applications can listen for them.
+    event Stake(address indexed owner, uint256 tokenId);
+    event Unstake(address indexed owner, uint256 tokenId);
 
-  /// @notice Constructor takes in Bubbles address, and # bubbles generated per block
-  constructor(address _token, uint256 _emissionPerBlock) {
-    TOKEN = _token;
-    emissionPerBlock = _emissionPerBlock;
-  }
+    /// @notice Constructor takes in Bubbles address, and # bubbles generated per block
+    constructor(address _token, uint256 _emissionPerBlock) {
+        TOKEN = _token;
+        emissionPerBlock = _emissionPerBlock;
+    }
 
-  /**
+    /**
     @notice Function to stake axos. Transfers axos from sender to this contract.
     @param tokenIds array of axolittle tokenIds to stake
     @dev loops through each axo, then:
@@ -52,16 +52,20 @@ contract old_AxolittlesStaking is Ownable {
     b. stores in map: key=tokenId of axo, value= current block number
     c. stores in map: key=tokenId of axo, value= address of sender
     */
-  function stake(uint256[] memory tokenIds) external {
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      IERC721(AXOLITTLES).transferFrom(msg.sender, address(this), tokenIds[i]);
-      stakeBlock[tokenIds[i]] = block.number;
-      stakeOwner[tokenIds[i]] = msg.sender;
-      emit Stake(msg.sender, tokenIds[i]);
+    function stake(uint256[] memory tokenIds) external {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            IERC721(AXOLITTLES).transferFrom(
+                msg.sender,
+                address(this),
+                tokenIds[i]
+            );
+            stakeBlock[tokenIds[i]] = block.number;
+            stakeOwner[tokenIds[i]] = msg.sender;
+            emit Stake(msg.sender, tokenIds[i]);
+        }
     }
-  }
 
-  /**
+    /**
     @notice Function to claim Bubbles.
     @param tokenIds array of axolittle tokenIds to claim
     @dev loops through each axo, then:
@@ -71,21 +75,23 @@ contract old_AxolittlesStaking is Ownable {
     When looping complete, mints totalReward # of bubbles to sender.
     @dev Inefficient implementation, since gas costs scale with axos staked
     */
-  function claim(uint256[] memory tokenIds) external {
-    uint256 totalReward = 0;
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      uint256 token = tokenIds[i];
-      require(
-        msg.sender == stakeOwner[token],
-        "Only unstake your own axolittles"
-      );
-      totalReward += (block.number - stakeBlock[token]) * emissionPerBlock;
-      stakeBlock[token] = block.number;
+    function claim(uint256[] memory tokenIds) external {
+        uint256 totalReward = 0;
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 token = tokenIds[i];
+            require(
+                msg.sender == stakeOwner[token],
+                "Only unstake your own axolittles"
+            );
+            totalReward +=
+                (block.number - stakeBlock[token]) *
+                emissionPerBlock;
+            stakeBlock[token] = block.number;
+        }
+        IBubbles(TOKEN).mint(msg.sender, totalReward);
     }
-    IBubbles(TOKEN).mint(msg.sender, totalReward);
-  }
 
-  /**
+    /**
     @notice Function to unstake axos. Transfers axos from this contract back to sender address.
     @param tokenIds array of axolittle tokenIds to unstake
     @dev loops through each axo, then:
@@ -96,45 +102,49 @@ contract old_AxolittlesStaking is Ownable {
     When looping complete, mints Bubbles to sender
     @dev maybe utilize claim() function here, instead of reimplementing it? 
      */
-  function unstake(uint256[] memory tokenIds) external {
-    uint256 totalReward = 0;
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      uint256 token = tokenIds[i];
-      address owner = stakeOwner[token];
-      require(msg.sender == owner, "Only unstake your own axolittles");
-      totalReward += (block.number - stakeBlock[token]) * emissionPerBlock;
-      delete stakeOwner[token];
-      delete stakeBlock[token];
-      IERC721(AXOLITTLES).transferFrom(address(this), owner, token);
-      emit Unstake(msg.sender, tokenIds[i]);
+    function unstake(uint256[] memory tokenIds) external {
+        uint256 totalReward = 0;
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 token = tokenIds[i];
+            address owner = stakeOwner[token];
+            require(msg.sender == owner, "Only unstake your own axolittles");
+            totalReward +=
+                (block.number - stakeBlock[token]) *
+                emissionPerBlock;
+            delete stakeOwner[token];
+            delete stakeBlock[token];
+            IERC721(AXOLITTLES).transferFrom(address(this), owner, token);
+            emit Unstake(msg.sender, tokenIds[i]);
+        }
+        IBubbles(TOKEN).mint(msg.sender, totalReward);
     }
-    IBubbles(TOKEN).mint(msg.sender, totalReward);
-  }
 
-  /**
+    /**
     @notice Function to check total unclaimed bubbles for tokenIds provided
     @param tokenIds array of axolittle tokenIds to check for unclaimed bubbles
     @dev works like claim() function, just doesn't actually mint the tokens or reset starting block #
      */
-  function unclaimedRewards(uint256[] memory tokenIds)
-    external
-    view
-    returns (uint256[] memory)
-  {
-    uint256[] memory rewards = new uint256[](tokenIds.length);
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      uint256 stakeBlockNumber = stakeBlock[tokenIds[i]];
-      if (stakeBlockNumber == 0) {
-        rewards[i] = 0;
-      } else {
-        rewards[i] = (block.number - stakeBlockNumber) * emissionPerBlock;
-      }
+    function unclaimedRewards(uint256[] memory tokenIds)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        uint256[] memory rewards = new uint256[](tokenIds.length);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 stakeBlockNumber = stakeBlock[tokenIds[i]];
+            if (stakeBlockNumber == 0) {
+                rewards[i] = 0;
+            } else {
+                rewards[i] =
+                    (block.number - stakeBlockNumber) *
+                    emissionPerBlock;
+            }
+        }
+        return rewards;
     }
-    return rewards;
-  }
 
-  /// @notice Function to change amount of Bubbles generated each block per axo
-  function setEmissionPerBlock(uint256 _emissionPerBlock) external onlyOwner {
-    emissionPerBlock = _emissionPerBlock;
-  }
+    /// @notice Function to change amount of Bubbles generated each block per axo
+    function setEmissionPerBlock(uint256 _emissionPerBlock) external onlyOwner {
+        emissionPerBlock = _emissionPerBlock;
+    }
 }
