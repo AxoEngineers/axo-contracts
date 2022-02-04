@@ -2,14 +2,24 @@ const { expect, assert } = require("chai");
 const { network, ethers } = require("hardhat");
 const { beforeEach } = require("mocha");
 const { start } = require("repl");
-const { MerkleTree } = require("merkletreejs");
-const keccak256 = require("keccak256");
 
 //todo: check how reverts work when failure partway through function, especially w/ regard to transfers
 describe("AxolittlesStaking", () => {
   //deploy contract before each test
   let owner, addr1, n8, ac019;
   let stakingContract, axolittlesContract, bubblesContract;
+  let n8axos = [
+    4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690, 4253,
+    8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830, 8983, 6598, 1695,
+    9053, 9986, 5642, 362, 1426, 4724, 2787, 3392, 8293, 6894, 458, 6043, 2101,
+    925, 6427, 2220, 6483, 6053, 6731, 3453, 8658, 6890, 6877, 5543, 114, 5055,
+    804, 9858, 2437, 2562, 96, 6331, 7554, 8561, 2583, 90, 1452, 807, 3377,
+    3514, 1316, 3112, 3629, 8653, 2055, 2639, 5140, 2572, 3659, 4537, 1178,
+    6377, 5497, 2560, 3140, 9839, 3815, 9631, 4858, 2050, 2816, 7253, 1410,
+    2602, 8081, 7055, 5304, 3150, 8324, 4434, 835, 1569, 1067, 8354, 6480, 9731,
+    7798, 7600, 6284, 5932, 5814, 5026, 4314, 2014, 1876, 1381,
+  ];
+  console.log("n8 is staking %d axos", n8axos.length);
   //reset network state
   beforeEach(async () => {
     await ethers.provider.send("hardhat_reset", [
@@ -17,12 +27,12 @@ describe("AxolittlesStaking", () => {
         forking: {
           jsonRpcUrl:
             "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-          blockNumber: 14083004,
+          blockNumber: 14135835,
         },
       },
     ]);
     expect((await ethers.provider.getBlock("latest")).number).to.equal(
-      14083004
+      14135835
     );
     [owner, addr1] = await ethers.getSigners();
     //impersonate n8 and ac019
@@ -394,70 +404,26 @@ describe("AxolittlesStaking", () => {
       );
     });
   });
-  describe("Gas Testing", () => {
+  describe.only("Gas Testing", () => {
     //GAS TESTS: (comparison of deployment and all functions using hardhat)
     //1. Test Whale Stake
     it("should test whale stake", async () => {
-      await expect(
-        stakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      )
+      await expect(stakingContract.connect(n8).stake(n8axos))
         .to.emit(stakingContract, "Stake")
-        .withArgs(
-          n8.address,
-          [
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ]
-        );
+        .withArgs(n8.address, n8axos);
     });
     //2. Test Whale Unstake
     it("should test whale unstake", async () => {
-      await expect(
-        stakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      )
+      await expect(stakingContract.connect(n8).stake(n8axos))
         .to.emit(stakingContract, "Stake")
-        .withArgs(
-          n8.address,
-          [
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ]
-        );
-      await stakingContract
-        .connect(n8)
-        .unstake([
-          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-        ]);
+        .withArgs(n8.address, n8axos);
+      await stakingContract.connect(n8).unstake(n8axos);
     });
     //3. Test Whale Claim
     it("should test whale claim", async () => {
-      await expect(
-        stakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      )
+      await expect(stakingContract.connect(n8).stake(n8axos))
         .to.emit(stakingContract, "Stake")
-        .withArgs(
-          n8.address,
-          [
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ]
-        );
+        .withArgs(n8.address, n8axos);
       // Advance 1000 blocks
       for (let i = 0; i < 1000; i++) {
         await ethers.provider.send("evm_mine");
@@ -466,469 +432,30 @@ describe("AxolittlesStaking", () => {
     });
     //1. Test Whale Stake (Old Contract)
     it("should test whale stake (Old Contract)", async () => {
-      await expect(
-        oldStakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      ).to.emit(oldStakingContract, "Stake");
+      await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+        oldStakingContract,
+        "Stake"
+      );
     });
     //2. Test Whale Unstake (Old Contract)
     it("should test whale unstake (Old Contract)", async () => {
-      await expect(
-        oldStakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      ).to.emit(oldStakingContract, "Stake");
-      await oldStakingContract
-        .connect(n8)
-        .unstake([
-          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-        ]);
+      await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+        oldStakingContract,
+        "Stake"
+      );
+      await oldStakingContract.connect(n8).unstake(n8axos);
     });
     //3. Test Whale Claim (Old Contract)
     it("should test whale claim (Old Contract)", async () => {
-      await expect(
-        oldStakingContract
-          .connect(n8)
-          .stake([
-            4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-            4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-          ])
-      ).to.emit(oldStakingContract, "Stake");
+      await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+        oldStakingContract,
+        "Stake"
+      );
       // Advance 1000 blocks
       for (let i = 0; i < 1000; i++) {
         await ethers.provider.send("evm_mine");
       }
-      await oldStakingContract
-        .connect(n8)
-        .claim([
-          4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690,
-          4253, 8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830,
-        ]);
+      await oldStakingContract.connect(n8).claim(n8axos);
     });
-  });
-});
-
-describe.only("Test Bubbles Airdrop", function () {
-  let accounts;
-  let airdropFactory;
-  let airdropContract;
-  let merkleTreeDB;
-  let merkleTree;
-  let bubblesContract;
-
-  const c_bubblesContract = "0x58f46F627C88a3b217abc80563B9a726abB873ba";
-  const c_verboseLogging = true;
-
-  // Helper functions
-  function convertEntryToHash(entry) {
-    let packedEntry = ethers.utils.concat([
-      ethers.utils.arrayify(entry.address),
-      ethers.utils.zeroPad(entry.balance, 32),
-    ]);
-
-    // if (c_verboseLogging) {
-    //   console.log("entryToHash: " + "0x"+Buffer.from(keccak256("0x"+Buffer.from(packedEntry).toString('hex'))).toString('hex'));
-    // }
-
-    // returns the value of sol: keccak256(abi.encodePacked(msg.sender, _amount));
-    return (
-      "0x" +
-      Buffer.from(
-        keccak256("0x" + Buffer.from(packedEntry).toString("hex"))
-      ).toString("hex")
-    );
-  }
-
-  beforeEach(async () => {
-    // {
-    //     if (c_verboseLogging) {
-    //         console.log("\n**********beforeEach**********");
-    //     }
-    // }
-
-    if (accounts == null) {
-      accounts = await hre.ethers.getSigners();
-    }
-
-    // DataStructure of {address, balance}, used as leaf nodes of MerkleTree
-    merkleTreeDB = [
-      {
-        address: accounts[10].address,
-        balance: 10,
-      },
-      {
-        address: accounts[11].address,
-        balance: 11,
-      },
-      {
-        address: accounts[12].address,
-        balance: 12,
-      },
-      {
-        address: accounts[13].address,
-        balance: 13,
-      },
-    ];
-
-    const leafNodes = merkleTreeDB.map(convertEntryToHash);
-    merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
-    // {
-    //     if (c_verboseLogging) {
-    //         console.log("merkleTree: %s", merkleTree.toString());
-    //     }
-    // }
-
-    if (airdropFactory == null) {
-      airdropFactory = await hre.ethers.getContractFactory("BubblesAirdrop");
-    }
-
-    airdropContract = await airdropFactory.deploy(c_bubblesContract);
-    await airdropContract.deployed();
-
-    // {
-    //     if (c_verboseLogging) {
-    //         console.log("airdropContract address: %s", airdropContract.address);
-    //     }
-    // }
-
-    await airdropContract.setMerkleRoot(merkleTree.getRoot());
-    // {
-    //     if (c_verboseLogging) {
-    //         console.log("airdropContract merkleRoot: %s", await airdropContract.merkleRoot());
-    //         console.log("airdropContract version: %s", await airdropContract.version());
-    //     }
-    // }
-
-    await network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: ["0xb0151D256ee16d847F080691C3529F316b2D54b3"],
-    });
-    n8 = await ethers.getSigner("0xb0151D256ee16d847F080691C3529F316b2D54b3");
-    bubblesContract = new ethers.Contract(
-      c_bubblesContract,
-      require("./BubblesContractABI.json"),
-      n8
-    );
-    await bubblesContract.connect(n8).setMinter(airdropContract.address, true);
-    await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
-      params: ["0xb0151D256ee16d847F080691C3529F316b2D54b3"],
-    });
-    // {
-    //   if (c_verboseLogging) {
-    //       console.log("approved airdropContract to mint Bubbles");
-    //   }
-    // }
-  });
-
-  it("Claim for valid leaf node", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log("\n**********Claim for valid leaf node**********");
-      }
-    }
-    let caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    let callerHash = convertEntryToHash(caller);
-    let callerProof = merkleTree.getHexProof(callerHash);
-
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[10].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-    await airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof);
-
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after claim: %s",
-          await bubblesContract.balanceOf(accounts[10].address)
-        );
-      }
-    }
-    expect(bubbleBalance).to.be.lt(
-      await bubblesContract.balanceOf(accounts[10].address)
-    );
-  });
-
-  it("Claim for valid address but already claimed", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "\n**********Claim for valid address but already claimed**********"
-        );
-        console.log("Try claim for accounts[10]");
-      }
-    }
-
-    let caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    let callerHash = convertEntryToHash(caller);
-    let callerProof = merkleTree.getHexProof(callerHash);
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[10].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-
-    await airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof);
-
-    let newBubbleBalance = await bubblesContract.balanceOf(
-      accounts[10].address
-    );
-    {
-      if (c_verboseLogging) {
-        console.log("accounts[10] has claimed successfully");
-        console.log(
-          "bubbleBalance of accounts[10] after claim: %s",
-          newBubbleBalance
-        );
-      }
-    }
-    expect(newBubbleBalance).to.be.gt(bubbleBalance);
-
-    caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    callerHash = convertEntryToHash(caller);
-    callerProof = merkleTree.getHexProof(callerHash);
-    await expect(
-      airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof)
-    ).to.be.revertedWith("Already claimed!");
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after reverted claim: %s",
-          await bubblesContract.balanceOf(accounts[10].address)
-        );
-      }
-    }
-    expect(newBubbleBalance).to.be.equal(
-      await bubblesContract.balanceOf(accounts[10].address)
-    );
-  });
-
-  it("Claim for valid address with invalid proof", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "\n**********Claim for valid address with invalid proof**********"
-        );
-      }
-    }
-
-    caller = {
-      address: accounts[10].address,
-      balance: 0,
-    };
-    callerHash = convertEntryToHash(caller);
-    callerProof = merkleTree.getHexProof(callerHash);
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[10].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-    await expect(
-      airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof)
-    ).to.be.revertedWith("Verification failed!");
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after claim: %s",
-          await bubblesContract.balanceOf(accounts[10].address)
-        );
-      }
-    }
-    expect(bubbleBalance).to.be.equal(
-      await bubblesContract.balanceOf(accounts[10].address)
-    );
-  });
-
-  it("Claim for valid address but wrong balance", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "\n**********Claim for valid address but wrong balance**********"
-        );
-      }
-    }
-
-    caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    callerHash = convertEntryToHash(caller);
-    callerProof = merkleTree.getHexProof(callerHash);
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[10].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-    await expect(
-      airdropContract.connect(accounts[10]).claimAirdrop(20, callerProof)
-    ).to.be.revertedWith("Verification failed!");
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after claim: %s",
-          await bubblesContract.balanceOf(accounts[10].address)
-        );
-      }
-    }
-    expect(bubbleBalance).to.be.equal(
-      await bubblesContract.balanceOf(accounts[10].address)
-    );
-  });
-
-  it("Claim for invalid address with valid proof", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "\n**********Claim for invalid address with valid proof**********"
-        );
-      }
-    }
-
-    caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    callerHash = convertEntryToHash(caller);
-    callerProof = merkleTree.getHexProof(callerHash);
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[1].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[1] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-    await expect(
-      airdropContract.connect(accounts[1]).claimAirdrop(10, callerProof)
-    ).to.be.revertedWith("Verification failed!");
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[1] after claim: %s",
-          await bubblesContract.balanceOf(accounts[1].address)
-        );
-      }
-    }
-    expect(bubbleBalance).to.be.equal(
-      await bubblesContract.balanceOf(accounts[1].address)
-    );
-  });
-
-  it("Claim for accounts[10], deploy a new merkle tree, and claim again", async function () {
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "\n**********Claim for accounts[10], deploy a new merkle tree, and claim again**********"
-        );
-      }
-    }
-    let caller = {
-      address: accounts[10].address,
-      balance: 10,
-    };
-    let callerHash = convertEntryToHash(caller);
-    let callerProof = merkleTree.getHexProof(callerHash);
-
-    let bubbleBalance = await bubblesContract.balanceOf(accounts[10].address);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] before claim: %s",
-          bubbleBalance
-        );
-      }
-    }
-    await airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof);
-    let newBubbleBalance = await bubblesContract.balanceOf(
-      accounts[10].address
-    );
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after claim: %s",
-          newBubbleBalance
-        );
-      }
-    }
-    expect(bubbleBalance).to.be.lt(newBubbleBalance);
-
-    let version = await airdropContract.version();
-    {
-      if (c_verboseLogging) {
-        console.log("Deploy new merkle tree");
-        console.log(
-          "airdropContract version: %s",
-          await airdropContract.version()
-        );
-      }
-    }
-    const leafNodes = merkleTreeDB.map(convertEntryToHash);
-    const newMerkleTree = new MerkleTree(leafNodes, keccak256, {
-      sortPairs: true,
-    });
-    await airdropContract.setMerkleRoot(merkleTree.getRoot());
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "airdropContract merkleRoot: %s",
-          await airdropContract.merkleRoot()
-        );
-        console.log(
-          "airdropContract version: %s",
-          await airdropContract.version()
-        );
-        console.log("Claim with accounts[10] again");
-      }
-    }
-    expect(version).to.be.lt(await airdropContract.version());
-    callerProof = newMerkleTree.getHexProof(callerHash);
-    await airdropContract.connect(accounts[10]).claimAirdrop(10, callerProof);
-    {
-      if (c_verboseLogging) {
-        console.log(
-          "bubbleBalance of accounts[10] after 2nd claim: %s",
-          await bubblesContract.balanceOf(accounts[10].address)
-        );
-      }
-    }
-    expect(newBubbleBalance).to.be.lt(
-      await bubblesContract.balanceOf(accounts[10].address)
-    );
   });
 });

@@ -38,6 +38,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "@uniswap/v3-core": "^1.0.1",
     "eslint": "^8.7.0",
     "hardhat-shorthand": "^1.0.0"
   }

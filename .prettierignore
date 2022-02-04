@@ -5,7 +5,6 @@ old_contracts
 .eslintrc.json
 .json
 .gitignore
-hardhat.config.js 
 package-lock.json
 package.json
-README.md
+//README.md
