@@ -5,6 +5,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 require("dotenv").config();
+const waitFor = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 async function main() {
     // Hardhat always runs the compile task when running scripts with its command
@@ -23,7 +24,11 @@ async function main() {
     );
     await bubblesairdrop.deployed();
 
-    console.log("Migration Contract deployed to:", bubblesairdrop.address);
+    console.log(
+        "Bubbles Airdrop Contract deployed to:",
+        bubblesairdrop.address
+    );
+    waitFor(30000);
     await hre.run("verify:verify", {
         address: bubblesairdrop.address,
         constructorArguments: [process.env.TOKEN_ADDRESS],

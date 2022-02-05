@@ -4,20 +4,22 @@ const { beforeEach } = require("mocha");
 const { start } = require("repl");
 const { MerkleTree } = require("merkletreejs");
 const keccak256 = require("keccak256");
+require("dotenv").config();
 
-describe.only("Test Bubbles Airdrop", function () {
+describe("Test Bubbles Airdrop", function () {
     let accounts;
     let airdropFactory;
     let airdropContract;
-    let merkleTreeDB;
     let merkleTree;
     let bubblesContract;
+    let merkleTreeDB;
+    let airdropRecipients;
+    // DataStructure of {address, balance}, used as leaf nodes of MerkleTree
 
     const c_bubblesContract = "0x58f46F627C88a3b217abc80563B9a726abB873ba";
     const c_verboseLogging = true;
 
     // Helper functions
-    function merkleMaker() {}
     function convertEntryToHash(entry) {
         let packedEntry = ethers.utils.concat([
             ethers.utils.arrayify(entry.address),
@@ -36,27 +38,10 @@ describe.only("Test Bubbles Airdrop", function () {
             ).toString("hex")
         );
     }
-
-    beforeEach(async () => {
-        // {
-        //     if (c_verboseLogging) {
-        //         console.log("\n**********beforeEach**********");
-        //     }
-        // }
-
-        await ethers.provider.send("hardhat_reset", [
-            {
-                forking: {
-                    jsonRpcUrl:
-                        "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-                    blockNumber: 14135835,
-                },
-            },
-        ]);
+    before(async () => {
         if (accounts == null) {
             accounts = await hre.ethers.getSigners();
         }
-        // DataStructure of {address, balance}, used as leaf nodes of MerkleTree
         merkleTreeDB = [
             {
                 address: accounts[10].address,
@@ -83,6 +68,18 @@ describe.only("Test Bubbles Airdrop", function () {
         ];
         const leafNodes = merkleTreeDB.map(convertEntryToHash);
         merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
+    });
+
+    beforeEach(async () => {
+        await ethers.provider.send("hardhat_reset", [
+            {
+                forking: {
+                    jsonRpcUrl: process.env.ALCHEMY_RPC,
+                    blockNumber: 14135835,
+                },
+            },
+        ]);
+
         // {
         //     if (c_verboseLogging) {
         //         console.log("merkleTree: %s", merkleTree.toString());

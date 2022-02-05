@@ -2,12 +2,18 @@ const { expect, assert } = require("chai");
 const { network, ethers } = require("hardhat");
 const { beforeEach } = require("mocha");
 const { start } = require("repl");
+require("dotenv").config();
 
 //todo: check how reverts work when failure partway through function, especially w/ regard to transfers
 describe("AxolittlesStakingV2", () => {
     //deploy contract before each test
     let owner, addr1, n8, ac019;
-    let stakingContractV2, axolittlesContract, bubblesContract;
+    let oldStakingContract,
+        stakingContractV2,
+        axolittlesContract,
+        bubblesContract;
+    let axoBalanceAC, axoBalanceN8, axoBalanceStaking;
+    let testingEmissionAmount = 15;
     let n8axos = [
         4504, 7027, 5803, 4385, 4087, 3619, 6730, 4890, 9771, 1018, 7690, 4253,
         8616, 8636, 7385, 4041, 364, 2098, 3288, 4851, 7090, 8830, 8983, 6598,
@@ -20,21 +26,17 @@ describe("AxolittlesStakingV2", () => {
         1067, 8354, 6480, 9731, 7798, 7600, 6284, 5932, 5814, 5026, 4314, 2014,
         1876, 1381,
     ];
-    console.log("n8 is staking %d axos", n8axos.length);
+    const c_verboseLogging = true;
     //reset network state
     beforeEach(async () => {
         await ethers.provider.send("hardhat_reset", [
             {
                 forking: {
-                    jsonRpcUrl:
-                        "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+                    jsonRpcUrl: process.env.ALCHEMY_RPC,
                     blockNumber: 14135835,
                 },
             },
         ]);
-        expect((await ethers.provider.getBlock("latest")).number).to.equal(
-            14135835
-        );
         [owner, addr1] = await ethers.getSigners();
         //impersonate n8 and ac019
         await network.provider.request({
@@ -51,6 +53,20 @@ describe("AxolittlesStakingV2", () => {
         ac019 = await ethers.getSigner(
             "0x8Ada5F216eBA7612682b64C9fd65D460bFed264F"
         );
+        //get existing bubbles contract
+        bubblesContract = await ethers.getContractAt(
+            "Bubbles",
+            process.env.TOKEN_ADDRESS
+        );
+        //get existing axolittles contract
+        axolittlesContract = await ethers.getContractAt(
+            "Axolittles",
+            process.env.AXOLITTLES_ADDRESS
+        );
+        oldStakingContract = await ethers.getContractAt(
+            "old_AxolittlesStaking",
+            process.env.OLD_STAKING_ADDRESS
+        );
         //send n8 and ac019 some $$$
         await owner.sendTransaction({
             to: ac019.address,
@@ -66,29 +82,9 @@ describe("AxolittlesStakingV2", () => {
         );
         stakingContractV2 = await AxolittlesStakingV2.deploy();
         await stakingContractV2.deployed();
-        //deploy old staking contract
-        const OldAxolittlesStaking = await ethers.getContractFactory(
-            "old_AxolittlesStaking"
-        );
-        oldstakingContractV2 = await OldAxolittlesStaking.deploy(
-            process.env.TOKEN_ADDRESS,
-            process.env.EMISSION_AMOUNT
-        );
-        await stakingContractV2.deployed();
-        //get existing axolittles contract
-        axolittlesContract = await ethers.getContractAt(
-            "Axolittles",
-            process.env.AXOLITTLES_ADDRESS
-        );
-        //get existing bubbles contract
-        bubblesContract = await ethers.getContractAt(
-            "Bubbles",
-            process.env.TOKEN_ADDRESS
-        );
+
         //allow new staking contract to mint bubbles
         bubblesContract.connect(n8).setMinter(stakingContractV2.address, 1);
-        //allow old staking contract to mint bubbles
-        bubblesContract.connect(n8).setMinter(oldstakingContractV2.address, 1);
         //allow staking contract to transfer axos
         await axolittlesContract
             .connect(n8)
@@ -99,42 +95,44 @@ describe("AxolittlesStakingV2", () => {
         //allow old staking contract to transfer axos
         await axolittlesContract
             .connect(n8)
-            .setApprovalForAll(oldstakingContractV2.address, 1);
+            .setApprovalForAll(oldStakingContract.address, 1);
         await axolittlesContract
             .connect(ac019)
-            .setApprovalForAll(oldstakingContractV2.address, 1);
+            .setApprovalForAll(oldStakingContract.address, 1);
+        //check axo balances
+        axoBalanceAC = await axolittlesContract.balanceOf(ac019.address);
+        axoBalanceN8 = await axolittlesContract.balanceOf(n8.address);
+        axoBalanceStaking = await axolittlesContract.balanceOf(
+            stakingContractV2.address
+        );
+        //lower emission to prevent testing overflow
+        await stakingContractV2.setEmissionPerBlock(testingEmissionAmount);
+        await oldStakingContract
+            .connect(n8)
+            .setEmissionPerBlock(testingEmissionAmount);
     });
     describe("Deployment", () => {
-        //AUX CONTRACT CHECKS:
-        it("should fork existing contract state", async () => {
+        //DEPLOYMENT TEST:
+        it("should fork and deploy contracts", async () => {
             expect(await axolittlesContract.owner()).to.equal(
                 "0xb0151D256ee16d847F080691C3529F316b2D54b3"
             );
             expect(await bubblesContract.owner()).to.equal(
                 "0xb0151D256ee16d847F080691C3529F316b2D54b3"
             );
-        });
-        //DEPLOYMENT TEST:
-        it("should deploy contract with correct constructors", async () => {
             expect(await stakingContractV2.AXOLITTLES()).to.equal(
                 process.env.AXOLITTLES_ADDRESS
             );
             expect(await stakingContractV2.TOKEN()).to.equal(
                 process.env.TOKEN_ADDRESS
             );
-            expect(await stakingContractV2.emissionPerBlock()).to.equal(
-                process.env.EMISSION_AMOUNT
-            );
             expect(await stakingContractV2.checkReward(owner.address)).to.equal(
                 0
             );
-        });
-
-        it("Should set the right owner", async () => {
             expect(await stakingContractV2.owner()).to.equal(owner.address);
         });
     });
-    describe("User Methods", () => {
+    describe.only("User Methods", () => {
         //STAKING TESTS: (for each test, check all state variables)
         //test what happens if try to stake mix of tokenIDs owned + tokenIDs not owned
         //a. owned first, then not owned
@@ -152,16 +150,6 @@ describe("AxolittlesStakingV2", () => {
                 stakingContractV2.connect(n8).stake([])
             ).to.be.revertedWith("Nothing to stake");
         });
-
-        //3. test what happens when staking items not owned
-        it("should fail when staking items not owned", async () => {
-            await expect(
-                stakingContractV2.connect(n8).stake([1, 2, 3])
-            ).to.be.revertedWith(
-                "ERC721: transfer caller is not owner nor approved"
-            );
-        });
-
         //4. test legitimate stake
         it("should pass with legitimate stake", async () => {
             await expect(
@@ -169,12 +157,12 @@ describe("AxolittlesStakingV2", () => {
             )
                 .to.emit(stakingContractV2, "Stake")
                 .withArgs(n8.address, [4504, 7027, 5803]);
-            expect(await axolittlesContract.balanceOf(n8.address)).to.equal(
-                100
+            expect(await axolittlesContract.balanceOf(n8.address)).to.be.lt(
+                axoBalanceN8
             );
             expect(
                 await axolittlesContract.balanceOf(stakingContractV2.address)
-            ).to.equal(3);
+            ).to.be.gt(axoBalanceStaking);
         });
 
         //UNSTAKING TESTS: (for each test, check all state variables)
@@ -224,7 +212,7 @@ describe("AxolittlesStakingV2", () => {
                 .to.emit(stakingContractV2, "Unstake")
                 .withArgs(n8.address, [4504, 7027]);
             expect(await axolittlesContract.balanceOf(n8.address)).to.equal(
-                102
+                axoBalanceN8 - 1
             );
             expect(
                 await axolittlesContract.balanceOf(stakingContractV2.address)
@@ -242,7 +230,7 @@ describe("AxolittlesStakingV2", () => {
                 .to.emit(stakingContractV2, "Unstake")
                 .withArgs(n8.address, [4504, 7027]);
             expect(await axolittlesContract.balanceOf(n8.address)).to.equal(
-                102
+                axoBalanceN8 - 1
             );
             expect(
                 await axolittlesContract.balanceOf(stakingContractV2.address)
@@ -275,22 +263,12 @@ describe("AxolittlesStakingV2", () => {
             )
                 .to.emit(stakingContractV2, "Unstake")
                 .withArgs(n8.address, [4504, 7027, 5803]);
-            const startBlock = (await stakingContractV2.stakers(n8.address))
-                .blockSinceLastCalc;
-            const currBlock = (await ethers.provider.getBlock("latest")).number;
-            const n8calcedReward = (await stakingContractV2.stakers(n8.address))
-                .calcedReward;
-            const n8NumStaked = (await stakingContractV2.stakers(n8.address))
-                .numStaked;
-            const n8Reward = n8calcedReward.add(
-                n8NumStaked.mul(
-                    process.env.EMISSION_AMOUNT * (currBlock + 1 - startBlock)
-                )
-            );
             //claim
-            await expect(stakingContractV2.connect(n8).claim())
-                .to.emit(stakingContractV2, "Claim")
-                .withArgs(n8.address, `${n8Reward}`);
+            await expect(stakingContractV2.connect(n8).claim()).to.emit(
+                stakingContractV2,
+                "Claim"
+            );
+            expect(await stakingContractV2.checkReward(n8.address)).to.equal(0);
         });
 
         //4. perform claim when axos staked, $BUBBLE generated
@@ -305,64 +283,17 @@ describe("AxolittlesStakingV2", () => {
             for (let i = 0; i < 10; i++) {
                 await ethers.provider.send("evm_mine");
             }
-            const startBlock = (await stakingContractV2.stakers(n8.address))
-                .blockSinceLastCalc;
-            const currBlock = (await ethers.provider.getBlock("latest")).number;
-            const n8calcedReward = (await stakingContractV2.stakers(n8.address))
-                .calcedReward;
-            const n8NumStaked = (await stakingContractV2.stakers(n8.address))
-                .numStaked;
-            const n8Reward = n8calcedReward.add(
-                n8NumStaked.mul(
-                    process.env.EMISSION_AMOUNT * (currBlock + 1 - startBlock)
-                )
+            await expect(stakingContractV2.connect(n8).claim()).to.emit(
+                stakingContractV2,
+                "Claim"
             );
-            //claim
-            await expect(stakingContractV2.connect(n8).claim())
-                .to.emit(stakingContractV2, "Claim")
-                .withArgs(n8.address, `${n8Reward}`);
+            expect(await stakingContractV2.checkReward(n8.address)).to.equal(0);
         });
         //CHECKREWARDS TESTS:
-        //1. check reward  on user without axos staked
-        it("should check reward when $BUBBLE remaining, axos unstaked", async () => {
-            await expect(
-                stakingContractV2.connect(n8).stake([4504, 7027, 5803])
-            )
-                .to.emit(stakingContractV2, "Stake")
-                .withArgs(n8.address, [4504, 7027, 5803]);
-            // Advance 1000 blocks
-            for (let i = 0; i < 1000; i++) {
-                await ethers.provider.send("evm_mine");
-            }
-            await expect(
-                stakingContractV2.connect(n8).unstake([4504, 7027, 5803])
-            )
-                .to.emit(stakingContractV2, "Unstake")
-                .withArgs(n8.address, [4504, 7027, 5803]);
-            const startBlock = (await stakingContractV2.stakers(n8.address))
-                .blockSinceLastCalc;
-            const currBlock = (await ethers.provider.getBlock("latest")).number;
-            const n8calcedReward = (await stakingContractV2.stakers(n8.address))
-                .calcedReward;
-            const n8NumStaked = (await stakingContractV2.stakers(n8.address))
-                .numStaked;
-            const n8Reward = n8calcedReward.add(
-                n8NumStaked *
-                    process.env.EMISSION_AMOUNT *
-                    (currBlock - startBlock)
-            );
-            expect(
-                await stakingContractV2.connect(n8).checkReward(n8.address)
-            ).to.equal(`${n8Reward}`);
+        //todo: make a test with variable reward dturned off
 
-            expect(
-                await stakingContractV2
-                    .connect(ac019)
-                    .checkReward(ac019.address)
-            ).to.equal(0);
-        });
         //2. check reward on user with axos staked
-        it("should check reward when $BUBBLE remaining, axos staked", async () => {
+        it.only("should check reward when $BUBBLE remaining, axos staked", async () => {
             await expect(
                 stakingContractV2.connect(n8).stake([4504, 7027, 5803])
             )
@@ -373,20 +304,37 @@ describe("AxolittlesStakingV2", () => {
                 await ethers.provider.send("evm_mine");
             }
             //start block should be close to 14083004
-            const startBlock = (await stakingContractV2.stakers(n8.address))
-                .blockSinceLastCalc;
+            const startBlock = (
+                await stakingContractV2.stakers(n8.address)
+            ).blockSinceLastCalc.toNumber();
             //currBlock should be close to startBlock + 1000 = 14084004
             const currBlock = (await ethers.provider.getBlock("latest")).number;
-            const n8Reward =
-                3 * process.env.EMISSION_AMOUNT * (currBlock - startBlock);
+            let totalEmission = testingEmissionAmount;
+            if (stakingContractV2.isVariableReward()) {
+                let stakeTarget = (
+                    await stakingContractV2.stakeTarget()
+                ).toNumber();
+                let bothStaked =
+                    (
+                        await axolittlesContract.balanceOf(
+                            stakingContractV2.address
+                        )
+                    ).toNumber() +
+                    (
+                        await axolittlesContract.balanceOf(
+                            oldStakingContract.address
+                        )
+                    ).toNumber();
+                totalEmission =
+                    bothStaked >= stakeTarget
+                        ? testingEmissionAmount * 2
+                        : testingEmissionAmount +
+                          (testingEmissionAmount * bothStaked) / stakeTarget;
+            }
+
             expect(
-                await stakingContractV2.connect(n8).checkReward(n8.address)
-            ).to.equal(`${n8Reward}`);
-            expect(
-                await stakingContractV2
-                    .connect(ac019)
-                    .checkReward(ac019.address)
-            ).to.equal(0);
+                (await stakingContractV2.checkReward(n8.address)).toNumber()
+            ).to.equal(3 * totalEmission * (currBlock - startBlock));
         });
     });
     describe("Admin Methods", () => {
@@ -484,27 +432,30 @@ describe("AxolittlesStakingV2", () => {
         });
         //1. Test Whale Stake (Old Contract)
         it("should test whale stake (Old Contract)", async () => {
-            await expect(
-                oldstakingContractV2.connect(n8).stake(n8axos)
-            ).to.emit(oldstakingContractV2, "Stake");
+            await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+                oldStakingContract,
+                "Stake"
+            );
         });
         //2. Test Whale Unstake (Old Contract)
         it("should test whale unstake (Old Contract)", async () => {
-            await expect(
-                oldstakingContractV2.connect(n8).stake(n8axos)
-            ).to.emit(oldstakingContractV2, "Stake");
-            await oldstakingContractV2.connect(n8).unstake(n8axos);
+            await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+                oldStakingContract,
+                "Stake"
+            );
+            await oldStakingContract.connect(n8).unstake(n8axos);
         });
         //3. Test Whale Claim (Old Contract)
         it("should test whale claim (Old Contract)", async () => {
-            await expect(
-                oldstakingContractV2.connect(n8).stake(n8axos)
-            ).to.emit(oldstakingContractV2, "Stake");
+            await expect(oldStakingContract.connect(n8).stake(n8axos)).to.emit(
+                oldStakingContract,
+                "Stake"
+            );
             // Advance 1000 blocks
             for (let i = 0; i < 1000; i++) {
                 await ethers.provider.send("evm_mine");
             }
-            await oldstakingContractV2.connect(n8).claim(n8axos);
+            await oldStakingContract.connect(n8).claim(n8axos);
         });
     });
 });

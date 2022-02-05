@@ -18,7 +18,7 @@ contract AxolittlesStakingV2 is Ownable {
     address public STAKING_V1 = 0x1cA6e4643062e67CCd555fB4F64Bee603340e0ea;
     bool public stakingPaused;
     bool public isVariableReward = true;
-    uint64 internal stakeTarget = 6000;
+    uint64 public stakeTarget = 6000;
     // Amount of $BUBBLE generated each block, contains 18 decimals.
     uint256 public emissionPerBlock = 15000000000000000;
     uint256 internal totalStaked;
@@ -114,19 +114,20 @@ contract AxolittlesStakingV2 is Ownable {
         view
         returns (uint256)
     {
-        uint256 totalReward = stakers[_staker_address].calcedReward +
-            stakers[_staker_address].numStaked *
-            emissionPerBlock *
-            (block.number - stakers[_staker_address].blockSinceLastCalc);
+        uint256 totalEmission = emissionPerBlock;
         if (isVariableReward) {
             //checks amount staked in both v1 and v2 staking contract
             uint256 bothStaked = totalStaked +
                 IERC721(AXOLITTLES).balanceOf(STAKING_V1);
-            totalReward = bothStaked >= stakeTarget
-                ? totalReward * 2
-                : totalReward + ((totalReward * bothStaked) / stakeTarget);
+            totalEmission = bothStaked >= stakeTarget
+                ? emissionPerBlock * 2
+                : (emissionPerBlock + ((emissionPerBlock * bothStaked) / stakeTarget));
         }
-        return totalReward;
+        return
+            stakers[_staker_address].calcedReward +
+            stakers[_staker_address].numStaked *
+            totalEmission *
+            (block.number - stakers[_staker_address].blockSinceLastCalc);
     }
 
     //ADMIN FUNCTIONS

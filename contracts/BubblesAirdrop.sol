@@ -37,11 +37,6 @@ contract BubblesAirdrop is Ownable {
     );
     event SendAirdrop(address indexed owner, uint256 rewardAmount);
 
-    /**
-    todo: claim migration rewards function
-    pass in data via merkle root in format of addreess/$BUBBLE owed
-    keep mapping(address => bool) rewardsTracker to track who has claimed already
-  */
     function claimAirdrop(uint256 _amount, bytes32[] calldata merkleProof)
         external
     {
