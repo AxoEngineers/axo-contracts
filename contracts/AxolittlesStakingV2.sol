@@ -119,6 +119,7 @@ contract AxolittlesStakingV2 is Ownable {
             emissionPerBlock *
             (block.number - stakers[_staker_address].blockSinceLastCalc);
         if (isVariableReward) {
+            //checks amount staked in both v1 and v2 staking contract
             uint256 bothStaked = totalStaked +
                 IERC721(AXOLITTLES).balanceOf(STAKING_V1);
             totalReward = bothStaked >= stakeTarget
