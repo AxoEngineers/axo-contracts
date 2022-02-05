@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 
 /// @title Interface to interact with Bubbles contract.
 interface IBubbles {
@@ -120,14 +119,11 @@ contract AxolittlesStakingV2 is Ownable {
             emissionPerBlock *
             (block.number - stakers[_staker_address].blockSinceLastCalc);
         if (isVariableReward) {
-            totalReward = totalStaked >= stakeTarget
+            uint256 bothStaked = totalStaked +
+                IERC721(AXOLITTLES).balanceOf(STAKING_V1);
+            totalReward = bothStaked >= stakeTarget
                 ? totalReward * 2
-                : totalReward +
-                    FullMath.mulDiv(
-                        totalReward,
-                        totalStaked + IERC(AXOLITTLES).balanceOf(STAKING_V1),
-                        stakeTarget
-                    );
+                : totalReward + ((totalReward * bothStaked) / stakeTarget);
         }
         return totalReward;
     }

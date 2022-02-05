@@ -75,7 +75,12 @@ describe.only("Test Bubbles Airdrop", function () {
                 balance: 13,
             },
         ];
-
+        airdropRecipients = [
+            [accounts[10].address, 10],
+            [accounts[11].address, 11],
+            [accounts[12].address, 12],
+            [accounts[13].address, 13],
+        ];
         const leafNodes = merkleTreeDB.map(convertEntryToHash);
         merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
         // {
@@ -454,5 +459,106 @@ describe.only("Test Bubbles Airdrop", function () {
         expect(newBubbleBalance).to.be.lt(
             await bubblesContract.balanceOf(accounts[10].address)
         );
+    });
+
+    it("Send airdrop as owner", async function () {
+        {
+            if (c_verboseLogging) {
+                console.log("\n**********Send airdrop as owner**********");
+            }
+        }
+
+        let bubbleBalance1 = await bubblesContract.balanceOf(
+            accounts[10].address
+        );
+        let bubbleBalance2 = await bubblesContract.balanceOf(
+            accounts[11].address
+        );
+        let bubbleBalance3 = await bubblesContract.balanceOf(
+            accounts[12].address
+        );
+        let bubbleBalance4 = await bubblesContract.balanceOf(
+            accounts[13].address
+        );
+        {
+            if (c_verboseLogging) {
+                console.log(
+                    "bubbleBalance of account 1: %s, 2: %s, 3: %s, 4: %s before claim",
+                    bubbleBalance1,
+                    bubbleBalance2,
+                    bubbleBalance3,
+                    bubbleBalance4
+                );
+            }
+        }
+        await airdropContract.sendAirdrop(airdropRecipients);
+        {
+            if (c_verboseLogging) {
+                console.log(
+                    "bubbleBalance of account 1: %s, 2: %s, 3: %s, 4: %s after send",
+                    await bubblesContract.balanceOf(accounts[10].address),
+                    await bubblesContract.balanceOf(accounts[11].address),
+                    await bubblesContract.balanceOf(accounts[12].address),
+                    await bubblesContract.balanceOf(accounts[13].address)
+                );
+            }
+        }
+        expect(bubbleBalance1).to.be.lt(
+            await bubblesContract.balanceOf(accounts[10].address)
+        );
+        expect(bubbleBalance2).to.be.lt(
+            await bubblesContract.balanceOf(accounts[11].address)
+        );
+        expect(bubbleBalance3).to.be.lt(
+            await bubblesContract.balanceOf(accounts[12].address)
+        );
+        expect(bubbleBalance4).to.be.lt(
+            await bubblesContract.balanceOf(accounts[13].address)
+        );
+    });
+    it("Send airdrop not as owner", async function () {
+        {
+            if (c_verboseLogging) {
+                console.log("\n**********Send airdrop not as owner**********");
+            }
+        }
+
+        let bubbleBalance1 = await bubblesContract.balanceOf(
+            accounts[10].address
+        );
+        let bubbleBalance2 = await bubblesContract.balanceOf(
+            accounts[11].address
+        );
+        let bubbleBalance3 = await bubblesContract.balanceOf(
+            accounts[12].address
+        );
+        let bubbleBalance4 = await bubblesContract.balanceOf(
+            accounts[13].address
+        );
+        {
+            if (c_verboseLogging) {
+                console.log(
+                    "bubbleBalance of account 1: %s, 2: %s, 3: %s, 4: %s before send",
+                    bubbleBalance1,
+                    bubbleBalance2,
+                    bubbleBalance3,
+                    bubbleBalance4
+                );
+            }
+        }
+        await expect(
+            airdropContract.connect(accounts[10]).sendAirdrop(airdropRecipients)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+        {
+            if (c_verboseLogging) {
+                console.log(
+                    "bubbleBalance of account 1: %s, 2: %s, 3: %s, 4: %s after send",
+                    await bubblesContract.balanceOf(accounts[10].address),
+                    await bubblesContract.balanceOf(accounts[11].address),
+                    await bubblesContract.balanceOf(accounts[12].address),
+                    await bubblesContract.balanceOf(accounts[13].address)
+                );
+            }
+        }
     });
 });
