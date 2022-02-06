@@ -127,27 +127,6 @@ contract AxolittlesStakingV2 is Ownable {
                 newReward = (newReward * bothStaked) / stakeTarget;
             }
         }
-        /*
-        uint256 totalEmission = emissionPerBlock;
-        if (isVariableReward) {
-            //checks amount staked in both v1 and v2 staking contract
-            uint256 bothStaked = totalStaked +
-                IERC721(AXOLITTLES).balanceOf(STAKING_V1);
-            if (bothStaked >= stakeTarget) {
-                totalEmission *= 2;
-            } else {
-                assembly {
-                    totalEmission := add(
-                        sload(emissionPerBlock.slot),
-                        div(
-                            mul(sload(emissionPerBlock.slot), bothStaked),
-                            sload(stakeTarget.slot)
-                        )
-                    )
-                }
-            }
-        }
-        */
         return stakers[_staker_address].calcedReward + newReward;
     }
 
