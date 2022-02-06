@@ -77,6 +77,7 @@ describe("Test Bubbles Airdrop", function () {
                     jsonRpcUrl: process.env.ALCHEMY_RPC,
                     blockNumber: 14135835,
                 },
+                s,
             },
         ]);
 

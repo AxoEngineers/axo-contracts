@@ -291,9 +291,9 @@ describe("AxolittlesStakingV2", () => {
         });
         //CHECKREWARDS TESTS:
         //todo: make a test with variable reward dturned off
-
-        //2. check reward on user with axos staked
-        it.only("should check reward when $BUBBLE remaining, axos staked", async () => {
+        it("should check reward when variable reward off", async () => {
+            await stakingContractV2.setVariableReward(false);
+            expect(await stakingContractV2.isVariableReward()).to.equal(false);
             await expect(
                 stakingContractV2.connect(n8).stake([4504, 7027, 5803])
             )
@@ -309,32 +309,86 @@ describe("AxolittlesStakingV2", () => {
             ).blockSinceLastCalc.toNumber();
             //currBlock should be close to startBlock + 1000 = 14084004
             const currBlock = (await ethers.provider.getBlock("latest")).number;
-            let totalEmission = testingEmissionAmount;
-            if (stakingContractV2.isVariableReward()) {
-                let stakeTarget = (
-                    await stakingContractV2.stakeTarget()
+            //calc new reward to add to calcedReward
+            let bothStaked =
+                (
+                    await axolittlesContract.balanceOf(
+                        stakingContractV2.address
+                    )
+                ).toNumber() +
+                (
+                    await axolittlesContract.balanceOf(
+                        oldStakingContract.address
+                    )
                 ).toNumber();
-                let bothStaked =
-                    (
-                        await axolittlesContract.balanceOf(
-                            stakingContractV2.address
-                        )
-                    ).toNumber() +
-                    (
-                        await axolittlesContract.balanceOf(
-                            oldStakingContract.address
-                        )
-                    ).toNumber();
-                totalEmission =
-                    bothStaked >= stakeTarget
-                        ? testingEmissionAmount * 2
-                        : testingEmissionAmount +
-                          (testingEmissionAmount * bothStaked) / stakeTarget;
+            let stakeTarget = (
+                await stakingContractV2.stakeTarget()
+            ).toNumber();
+            let newReward =
+                3 * testingEmissionAmount * (currBlock - startBlock);
+            if (await stakingContractV2.isVariableReward()) {
+                if (bothStaked >= stakeTarget) {
+                    newReward *= 2;
+                } else {
+                    newReward = (newReward * bothStaked) / stakeTarget;
+                }
             }
-
+            let totalReward =
+                (
+                    await stakingContractV2.stakers(n8.address)
+                ).calcedReward.toNumber() + newReward;
             expect(
                 (await stakingContractV2.checkReward(n8.address)).toNumber()
-            ).to.equal(3 * totalEmission * (currBlock - startBlock));
+            ).to.equal(parseInt(totalReward));
+        });
+        //2. check reward on user with axos staked
+        it("should check reward when variable reward on", async () => {
+            await expect(
+                stakingContractV2.connect(n8).stake([4504, 7027, 5803])
+            )
+                .to.emit(stakingContractV2, "Stake")
+                .withArgs(n8.address, [4504, 7027, 5803]);
+            // Advance 1000 blocks
+            for (let i = 0; i < 1000; i++) {
+                await ethers.provider.send("evm_mine");
+            }
+            //start block should be close to 14083004
+            const startBlock = (
+                await stakingContractV2.stakers(n8.address)
+            ).blockSinceLastCalc.toNumber();
+            //currBlock should be close to startBlock + 1000 = 14084004
+            const currBlock = (await ethers.provider.getBlock("latest")).number;
+            //calc new reward to add to calcedReward
+            let bothStaked =
+                (
+                    await axolittlesContract.balanceOf(
+                        stakingContractV2.address
+                    )
+                ).toNumber() +
+                (
+                    await axolittlesContract.balanceOf(
+                        oldStakingContract.address
+                    )
+                ).toNumber();
+            let stakeTarget = (
+                await stakingContractV2.stakeTarget()
+            ).toNumber();
+            let newReward =
+                3 * testingEmissionAmount * (currBlock - startBlock);
+            if (await stakingContractV2.isVariableReward()) {
+                if (bothStaked >= stakeTarget) {
+                    newReward *= 2;
+                } else {
+                    newReward = (newReward * bothStaked) / stakeTarget;
+                }
+            }
+            let totalReward =
+                (
+                    await stakingContractV2.stakers(n8.address)
+                ).calcedReward.toNumber() + newReward;
+            expect(
+                (await stakingContractV2.checkReward(n8.address)).toNumber()
+            ).to.equal(parseInt(totalReward));
         });
     });
     describe("Admin Methods", () => {
