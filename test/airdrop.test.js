@@ -4,7 +4,6 @@ const { beforeEach } = require("mocha");
 const { start } = require("repl");
 const { MerkleTree } = require("merkletreejs");
 const keccak256 = require("keccak256");
-const Web3 = require('web3');
 require("dotenv").config();
 
 describe("Test Bubbles Airdrop", function () {
