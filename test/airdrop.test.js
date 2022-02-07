@@ -4,6 +4,7 @@ const { beforeEach } = require("mocha");
 const { start } = require("repl");
 const { MerkleTree } = require("merkletreejs");
 const keccak256 = require("keccak256");
+const Web3 = require('web3');
 require("dotenv").config();
 
 describe("Test Bubbles Airdrop", function () {
@@ -23,7 +24,7 @@ describe("Test Bubbles Airdrop", function () {
     function convertEntryToHash(entry) {
         let packedEntry = ethers.utils.concat([
             ethers.utils.arrayify(entry.address),
-            ethers.utils.zeroPad(entry.balance, 32),
+            ethers.utils.zeroPad(ethers.utils.hexlify(ethers.BigNumber.from(entry.balance)), 32)
         ]);
 
         // if (c_verboseLogging) {
@@ -45,19 +46,19 @@ describe("Test Bubbles Airdrop", function () {
         merkleTreeDB = [
             {
                 address: accounts[10].address,
-                balance: 10,
+                balance: "10"
             },
             {
                 address: accounts[11].address,
-                balance: 11,
+                balance: "11",
             },
             {
                 address: accounts[12].address,
-                balance: 12,
+                balance: "12",
             },
             {
                 address: accounts[13].address,
-                balance: 13,
+                balance: "13",
             },
         ];
         airdropRecipients = [
@@ -77,7 +78,6 @@ describe("Test Bubbles Airdrop", function () {
                     jsonRpcUrl: process.env.ALCHEMY_RPC,
                     blockNumber: 14135835,
                 },
-                s,
             },
         ]);
 
