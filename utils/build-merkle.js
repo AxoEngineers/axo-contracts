@@ -64,7 +64,7 @@ fs.writeFile(outputPath, jsonString, function(err) {
 
 console.log('writing merkle root to: ', merkleRootPath)
 
-let merkleRoot = merkleTree.getRoot().toString('hex')
+let merkleRoot = "0x" + merkleTree.getRoot().toString('hex')
 fs.writeFile(merkleRootPath, merkleRoot, function(err) {
     if (err) throw err;
     console.log('done!');
