@@ -11,15 +11,16 @@ interface IBubbles {
 }
 
 /// @author The Axolittles Team
-/// @title Contract for staking axos to receive $BUBBLE
-contract AxolittlesStaking is Ownable {
+/// @title Contract V2 for staking axos to receive $BUBBLE
+contract AxolittlesStakingV2 is Ownable {
     address public AXOLITTLES = 0xf36446105fF682999a442b003f2224BcB3D82067;
     address public TOKEN = 0x58f46F627C88a3b217abc80563B9a726abB873ba;
+    address public STAKING_V1 = 0x1cA6e4643062e67CCd555fB4F64Bee603340e0ea;
     bool public stakingPaused;
-    bool public isPositiveSum = true;
-    uint64 internal stakeTarget = 6000;
+    bool public isVariableReward = true;
+    uint256 public stakeTarget = 6000;
     // Amount of $BUBBLE generated each block, contains 18 decimals.
-    uint256 public emissionPerBlock = 15; //temporarily 15 to avoid using bignumber in tests
+    uint256 public emissionPerBlock = 15000000000000000;
     uint256 internal totalStaked;
 
     /// @notice struct per owner address to store:
@@ -42,7 +43,8 @@ contract AxolittlesStaking is Ownable {
     event Unstake(address indexed owner, uint256[] tokenIds);
     event Claim(address indexed owner, uint256 totalReward);
     event SetStakingPaused(bool _stakingPaused);
-    event SetPositiveSum(bool _isPositiveSum, uint64 stakeTarget);
+    event SetVariableReward(bool _isVariableReward);
+    event SetStakeTarget(uint256 stakeTarget);
     event AdminTransfer(uint256[] tokenIds);
 
     /// @notice Function to stake axos. Transfers axos from sender to this contract.
@@ -113,14 +115,19 @@ contract AxolittlesStaking is Ownable {
         view
         returns (uint256)
     {
-        uint256 totalReward = stakers[_staker_address].calcedReward +
-            stakers[_staker_address].numStaked *
+        uint256 newReward = stakers[_staker_address].numStaked *
             emissionPerBlock *
             (block.number - stakers[_staker_address].blockSinceLastCalc);
-        if (isPositiveSum) {
-            totalReward *= (1 + (totalStaked / stakeTarget));
+        if (isVariableReward) {
+            uint256 bothStaked = totalStaked +
+                IERC721(AXOLITTLES).balanceOf(STAKING_V1);
+            if (bothStaked >= stakeTarget) {
+                newReward *= 2;
+            } else {
+                newReward = (newReward * bothStaked) / stakeTarget;
+            }
         }
-        return totalReward;
+        return stakers[_staker_address].calcedReward + newReward;
     }
 
     //ADMIN FUNCTIONS
@@ -148,14 +155,18 @@ contract AxolittlesStaking is Ownable {
         emit SetStakingPaused(stakingPaused);
     }
 
-    ///@notice Function to turn on positive sum staking
-    function setPositiveSum(bool _isPositiveSum, uint64 _stakeTarget)
-        external
-        onlyOwner
-    {
-        isPositiveSum = _isPositiveSum;
+    ///@notice Function to turn on variable rewards
+    function setVariableReward(bool _isVariableReward) external onlyOwner {
+        require(isVariableReward != _isVariableReward, "Nothing changed");
+        isVariableReward = _isVariableReward;
+        emit SetVariableReward(isVariableReward);
+    }
+
+    ///@notice Function to change stake target for variable rewards
+    function setStakeTarget(uint256 _stakeTarget) external onlyOwner {
+        require(_stakeTarget > 0, "Please don't break the math!");
         stakeTarget = _stakeTarget;
-        emit SetPositiveSum(isPositiveSum, stakeTarget);
+        emit SetStakeTarget(stakeTarget);
     }
 
     /// @notice Function for admin to transfer axos out of contract back to original owner

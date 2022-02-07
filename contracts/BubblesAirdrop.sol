@@ -18,6 +18,12 @@ contract BubblesAirdrop is Ownable {
     address public TOKEN;
     bytes32 public merkleRoot;
     uint256 public version;
+
+    struct recipient {
+        address user;
+        uint256 amount;
+    }
+
     mapping(uint256 => mapping(address => bool)) internal claimed;
 
     constructor(address _tokenAddress) {
@@ -29,12 +35,8 @@ contract BubblesAirdrop is Ownable {
         uint256 rewardAmount,
         uint256 version
     );
+    event SendAirdrop(address indexed owner, uint256 rewardAmount);
 
-    /**
-    todo: claim migration rewards function
-    pass in data via merkle root in format of addreess/$BUBBLE owed
-    keep mapping(address => bool) rewardsTracker to track who has claimed already
-  */
     function claimAirdrop(uint256 _amount, bytes32[] calldata merkleProof)
         external
     {
@@ -47,6 +49,14 @@ contract BubblesAirdrop is Ownable {
         claimed[version][msg.sender] = true;
         IBubbles(TOKEN).mint(msg.sender, _amount);
         emit ClaimAirdrop(msg.sender, _amount, version);
+    }
+
+    //for admin to airdrop $BUBBLE to recipients
+    function sendAirdrop(recipient[] memory _recipients) external onlyOwner {
+        for (uint256 i = 0; i < _recipients.length; i++) {
+            IBubbles(TOKEN).mint(_recipients[i].user, _recipients[i].amount);
+            emit SendAirdrop(_recipients[i].user, _recipients[i].amount);
+        }
     }
 
     /// @notice Function to change address of reward token
