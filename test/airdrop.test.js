@@ -45,7 +45,7 @@ describe("Test Bubbles Airdrop", function () {
         merkleTreeDB = [
             {
                 address: accounts[10].address,
-                balance: "69"
+                balance: "2875710000000000000000"
             },
             {
                 address: accounts[11].address,
@@ -61,7 +61,7 @@ describe("Test Bubbles Airdrop", function () {
             },
         ];
         airdropRecipients = [
-            [accounts[10].address, 69],
+            [accounts[10].address, "2875710000000000000000"],
             [accounts[11].address, 11],
             [accounts[12].address, 12],
             [accounts[13].address, 13],
@@ -143,7 +143,7 @@ describe("Test Bubbles Airdrop", function () {
         }
         let caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         let callerHash = convertEntryToHash(caller);
         let callerProof = merkleTree.getHexProof(callerHash);
@@ -161,7 +161,7 @@ describe("Test Bubbles Airdrop", function () {
         }
         await airdropContract
             .connect(accounts[10])
-            .claimAirdrop(69, callerProof);
+            .claimAirdrop("2875710000000000000000", callerProof);
 
         {
             if (c_verboseLogging) {
@@ -188,7 +188,7 @@ describe("Test Bubbles Airdrop", function () {
 
         let caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         let callerHash = convertEntryToHash(caller);
         let callerProof = merkleTree.getHexProof(callerHash);
@@ -206,7 +206,7 @@ describe("Test Bubbles Airdrop", function () {
 
         await airdropContract
             .connect(accounts[10])
-            .claimAirdrop(69, callerProof);
+            .claimAirdrop("2875710000000000000000", callerProof);
 
         let newBubbleBalance = await bubblesContract.balanceOf(
             accounts[10].address
@@ -224,7 +224,7 @@ describe("Test Bubbles Airdrop", function () {
 
         caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         callerHash = convertEntryToHash(caller);
         callerProof = merkleTree.getHexProof(callerHash);
@@ -297,7 +297,7 @@ describe("Test Bubbles Airdrop", function () {
 
         caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         callerHash = convertEntryToHash(caller);
         callerProof = merkleTree.getHexProof(callerHash);
@@ -339,7 +339,7 @@ describe("Test Bubbles Airdrop", function () {
 
         caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         callerHash = convertEntryToHash(caller);
         callerProof = merkleTree.getHexProof(callerHash);
@@ -380,7 +380,7 @@ describe("Test Bubbles Airdrop", function () {
         }
         let caller = {
             address: accounts[10].address,
-            balance: "69",
+            balance: "2875710000000000000000",
         };
         let callerHash = convertEntryToHash(caller);
         let callerProof = merkleTree.getHexProof(callerHash);
@@ -398,7 +398,7 @@ describe("Test Bubbles Airdrop", function () {
         }
         await airdropContract
             .connect(accounts[10])
-            .claimAirdrop(69, callerProof);
+            .claimAirdrop("2875710000000000000000", callerProof);
         let newBubbleBalance = await bubblesContract.balanceOf(
             accounts[10].address
         );
@@ -444,7 +444,7 @@ describe("Test Bubbles Airdrop", function () {
         callerProof = newMerkleTree.getHexProof(callerHash);
         await airdropContract
             .connect(accounts[10])
-            .claimAirdrop(69, callerProof);
+            .claimAirdrop("2875710000000000000000", callerProof);
         {
             if (c_verboseLogging) {
                 console.log(
