@@ -330,7 +330,7 @@ describe("AxolittlesStakingV2", () => {
                 if (bothStaked >= stakeTarget) {
                     newReward *= 2;
                 } else {
-                    newReward = (newReward * bothStaked) / stakeTarget;
+                    newReward += (newReward * bothStaked) / stakeTarget;
                 }
             }
             let totalReward =
@@ -379,7 +379,7 @@ describe("AxolittlesStakingV2", () => {
                 if (bothStaked >= stakeTarget) {
                     newReward *= 2;
                 } else {
-                    newReward = (newReward * bothStaked) / stakeTarget;
+                    newReward += (newReward * bothStaked) / stakeTarget;
                 }
             }
             let totalReward =

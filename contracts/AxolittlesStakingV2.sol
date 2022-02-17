@@ -124,7 +124,7 @@ contract AxolittlesStakingV2 is Ownable {
             if (bothStaked >= stakeTarget) {
                 newReward *= 2;
             } else {
-                newReward = (newReward * bothStaked) / stakeTarget;
+                newReward += (newReward * bothStaked) / stakeTarget;
             }
         }
         return stakers[_staker_address].calcedReward + newReward;

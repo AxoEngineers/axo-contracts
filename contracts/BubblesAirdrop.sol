@@ -5,8 +5,6 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-//import "hardhat/console.sol";
-
 /// @title Interface to interact with Bubbles contract.
 interface IBubbles {
     function mint(address recipient, uint256 amount) external;

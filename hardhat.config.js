@@ -24,13 +24,21 @@ module.exports = {
         },
         rinkeby: {
             url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-            accounts: [process.env.AXOTESTER_PRIVATE_KEY],
+            accounts: [process.env.TESTER_PRIVATE_KEY],
+        },
+        ftmTestnet: {
+            url: `https://rpc.testnet.fantom.network`,
+            accounts: [process.env.AC019_PRIVATE_KEY],
         },
     },
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
-        apiKey: process.env.ETHERSCAN_API_KEY,
+        apiKey: {
+            mainnet: process.env.ETHERSCAN_API_KEY,
+            ftmTestnet: process.env.FTMSCAN_API_KEY,
+            rinkeby: process.env.ETHERSCAN_API_KEY,
+        },
     },
     solidity: {
         version: "0.8.10",
