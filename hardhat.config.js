@@ -20,7 +20,7 @@ module.exports = {
         },
         live: {
             url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-            accounts: [process.env.AC019_PRIVATE_KEY],
+            accounts: [process.env.TESTER_PRIVATE_KEY],
         },
         rinkeby: {
             url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -28,7 +28,27 @@ module.exports = {
         },
         ftmTestnet: {
             url: `https://rpc.testnet.fantom.network`,
-            accounts: [process.env.AC019_PRIVATE_KEY],
+            accounts: [process.env.TESTER_PRIVATE_KEY],
+        },
+        rinkArby: {
+            url: process.env["L2RPC"] || "",
+            accounts: process.env["DEVNET_PRIVKEY"]
+                ? [process.env["DEVNET_PRIVKEY"]]
+                : [],
+        },
+        l1: {
+            gas: 2100000,
+            gasLimit: 0,
+            url: process.env["L1RPC"] || "",
+            accounts: process.env["DEVNET_PRIVKEY"]
+                ? [process.env["DEVNET_PRIVKEY"]]
+                : [],
+        },
+        l2: {
+            url: process.env["L2RPC"] || "",
+            accounts: process.env["DEVNET_PRIVKEY"]
+                ? [process.env["DEVNET_PRIVKEY"]]
+                : [],
         },
     },
     etherscan: {
@@ -38,6 +58,8 @@ module.exports = {
             mainnet: process.env.ETHERSCAN_API_KEY,
             ftmTestnet: process.env.FTMSCAN_API_KEY,
             rinkeby: process.env.ETHERSCAN_API_KEY,
+            arbitrumOne: process.env.ARBISCAN_API_KEY,
+            arbitrumTestnet: process.env.ARBISCAN_API_KEY,
         },
     },
     solidity: {

@@ -28,7 +28,7 @@ async function main() {
         "Bubbles Airdrop Contract deployed to:",
         bubblesairdrop.address
     );
-    waitFor(30000);
+    await waitFor(30000);
     await hre.run("verify:verify", {
         address: bubblesairdrop.address,
         constructorArguments: [process.env.TOKEN_ADDRESS],

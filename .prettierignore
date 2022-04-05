@@ -2,8 +2,3 @@ artifacts
 cache
 node_modules
 old_contracts
-.eslintrc.json
-.json
-.gitignore
-package-lock.json
-package.json

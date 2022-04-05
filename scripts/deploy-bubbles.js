@@ -5,32 +5,33 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 require("dotenv").config();
+const waitFor = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+    // Hardhat always runs the compile task when running scripts with its command
+    // line interface.
+    //
+    // If this script is run directly using `node` you may want to call compile
+    // manually to make sure everything is compiled
+    // await hre.run('compile');
 
-  // We get the contract to deploy
-  const Bubbles = await hre.ethers.getContractFactory("Bubbles");
-  const bubbles = await Bubbles.deploy();
-  await bubbles.deployed();
-
-  console.log("Bubbles contract deployed to:", bubbles.address);
-  await hre.run("verify:verify", {
-    address: bubbles.address,
-    constructorArguments: [],
-  });
+    // We get the contract to deploy
+    const Bubbles = await hre.ethers.getContractFactory("Bubbles");
+    const bubbles = await Bubbles.deploy();
+    await bubbles.deployed();
+    console.log("Bubbles contract deployed to:", bubbles.address);
+    await waitFor(30000);
+    await hre.run("verify:verify", {
+        address: bubbles.address,
+        constructorArguments: [],
+    });
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
