@@ -42,6 +42,14 @@ node scripts/deploy-staking.js
 npx hardhat help
 ```
 
+## Merkle Tree
+If your env doesn't work (like toast) you can comment most everything in hardhat.config.js to run the merkle script - none of the network info is needed for this. 
+
+```
+node utils/build-merkle.js
+```
+you'll need to set paths in your dotenv.
+
 ## Issues
 
 [Issue Tracker](https://github.com/axoengineers/axo-contracts/issues)
