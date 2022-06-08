@@ -13,43 +13,38 @@ module.exports = {
     networks: {
         hardhat: {
             forking: {
-                url: process.env.ALCHEMY_RPC,
-                blockNumber: 14135835,
+                url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+                blockNumber: 10813699,
                 enabled: true,
             },
         },
-        live: {
-            url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-            accounts: [process.env.TESTER_PRIVATE_KEY],
-        },
+        // live: {
+        //     url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+        //     accounts: [process.env.TESTER_PRIVATE_KEY],
+        // },
         rinkeby: {
             url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
             accounts: [process.env.TESTER_PRIVATE_KEY],
         },
-        ftmTestnet: {
-            url: `https://rpc.testnet.fantom.network`,
+        // ftmTestnet: {
+        //     url: `https://rpc.testnet.fantom.network`,
+        //     accounts: [process.env.TESTER_PRIVATE_KEY],
+        // },
+
+        rinkArby: {
+            url: `https://arb-rinkeby.g.alchemy.com/v2/${process.env.ARB_RINKEBY_PROJECT_ID}`,
             accounts: [process.env.TESTER_PRIVATE_KEY],
         },
-        rinkArby: {
-            url: process.env["L2RPC"] || "",
-            accounts: process.env["DEVNET_PRIVKEY"]
-                ? [process.env["DEVNET_PRIVKEY"]]
-                : [],
-        },
-        l1: {
-            gas: 2100000,
-            gasLimit: 0,
-            url: process.env["L1RPC"] || "",
-            accounts: process.env["DEVNET_PRIVKEY"]
-                ? [process.env["DEVNET_PRIVKEY"]]
-                : [],
-        },
-        l2: {
-            url: process.env["L2RPC"] || "",
-            accounts: process.env["DEVNET_PRIVKEY"]
-                ? [process.env["DEVNET_PRIVKEY"]]
-                : [],
-        },
+        // l1: {
+        //     gas: 2100000,
+        //     gasLimit: 0,
+        //     url: process.env["L1RPC"] || "",
+        //     accounts: process.env["TESTER_PRIVATE_KEY"]
+        // },
+        // l2: {
+        //     url: process.env["L2RPC"] || "",
+        //     accounts: process.env["TESTER_PRIVATE_KEY"]
+        // },
     },
     etherscan: {
         // Your API key for Etherscan
