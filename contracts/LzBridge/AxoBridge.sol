@@ -5,8 +5,9 @@ pragma solidity ^0.8.0;
 import "./lib/ONFT721Core.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AxoBridge is ONFT721Core, IERC721Receiver {
+contract AxoBridge is Ownable, ONFT721Core, IERC721Receiver {
 
     IERC721 public Axolittles = IERC721(0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7);
 
@@ -30,16 +31,16 @@ contract AxoBridge is ONFT721Core, IERC721Receiver {
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        require(msg.sender == address(Axolittles), "AxoBridge: received non Axolittle");
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external view override returns (bytes4) {
+        require((msg.sender == address(Axolittles)) || (msg.sender == owner()), "AxoBridge: receive not allowed");
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
-    function sd() external {
-        selfdestruct(payable(msg.sender));
+    function adminRecover(address _to, uint16 _tokenId) external onlyOwner {
+        Axolittles.safeTransferFrom(address(this), _to, _tokenId);
     }
 }
