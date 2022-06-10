@@ -20,8 +20,7 @@ contract AxolittlesArb is Ownable, ONFT721Core, ERC721, IONFT721 {
 
     function _debitFrom(address _from, uint16, bytes memory, uint16[] memory _tokenIds) internal virtual override {
         for (uint16 i = 0; i < _tokenIds.length;) {
-            require(_isApprovedOrOwner(_msgSender(), _tokenIds[i]), "Axolittles: send caller is not owner nor approved");
-            require(ERC721.ownerOf(_tokenIds[i]) == _from, "Axolittles: send from incorrect owner");
+            require(ERC721.ownerOf(_tokenIds[i]) == _from, "Axolittles: incorrect owner");
             _burn(_tokenIds[i]);
             unchecked { ++i; }
         }

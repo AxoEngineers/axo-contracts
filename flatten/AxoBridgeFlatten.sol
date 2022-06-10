@@ -45,12 +45,12 @@ interface IONFT721Core is IERC165 {
     function estimateSendFee(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
 
     /**
-     * @dev send token `_tokenId` to (`_dstChainId`, `_toAddress`) from `_from`
+     * @dev send token `_tokenId` to (`_dstChainId`, `_toAddress`) from `msg.sender`
      * `_toAddress` can be any size depending on the `dstChainId`.
      * `_zroPaymentAddress` set to address(0x0) if not paying in ZRO (LayerZero Token)
      * `_adapterParams` is a flexible bytes array to indicate messaging adapter services
      */
-    function sendFrom(address _from, uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
+    function sendFrom(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
 
     /**
      * @dev Emitted when `_tokenId` are moved from the `_sender` to (`_dstChainId`, `_toAddress`)
@@ -481,8 +481,8 @@ abstract contract ONFT721Core is NonblockingLzApp, ERC165, IONFT721Core {
         return lzEndpoint.estimateFees(_dstChainId, address(this), payload, _useZro, _adapterParams);
     }
 
-    function sendFrom(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
-        _send(_from, _dstChainId, _toAddress, _tokenIds, _refundAddress, _zroPaymentAddress, _adapterParams);
+    function sendFrom(uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
+        _send(msg.sender, _dstChainId, _toAddress, _tokenIds, _refundAddress, _zroPaymentAddress, _adapterParams);
     }
 
     function _send(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) internal virtual {
@@ -695,9 +695,9 @@ interface IERC721Receiver {
 
 
 pragma solidity ^0.8.0;
-contract AxoBridge is ONFT721Core, IERC721Receiver {
+contract AxoBridge is Ownable, ONFT721Core, IERC721Receiver {
 
-    IERC721 public Axolittles = IERC721(0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7);
+    IERC721 public Axolittles = IERC721(0xf36446105fF682999a442b003f2224BcB3D82067);
 
     constructor(address _lzEndpoint) ONFT721Core(_lzEndpoint) {}
 
@@ -719,16 +719,16 @@ contract AxoBridge is ONFT721Core, IERC721Receiver {
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        require(msg.sender == address(Axolittles), "AxoBridge: received non Axolittle");
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external view override returns (bytes4) {
+        require((msg.sender == address(Axolittles)) || (msg.sender == owner()), "AxoBridge: receive not allowed");
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
-    function sd() external {
-        selfdestruct(payable(msg.sender));
+    function adminRecover(address _to, uint16 _tokenId) external onlyOwner {
+        Axolittles.safeTransferFrom(address(this), _to, _tokenId);
     }
 }

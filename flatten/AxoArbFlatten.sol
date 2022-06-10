@@ -45,12 +45,12 @@ interface IONFT721Core is IERC165 {
     function estimateSendFee(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
 
     /**
-     * @dev send token `_tokenId` to (`_dstChainId`, `_toAddress`) from `_from`
+     * @dev send token `_tokenId` to (`_dstChainId`, `_toAddress`) from `msg.sender`
      * `_toAddress` can be any size depending on the `dstChainId`.
      * `_zroPaymentAddress` set to address(0x0) if not paying in ZRO (LayerZero Token)
      * `_adapterParams` is a flexible bytes array to indicate messaging adapter services
      */
-    function sendFrom(address _from, uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
+    function sendFrom(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
 
     /**
      * @dev Emitted when `_tokenId` are moved from the `_sender` to (`_dstChainId`, `_toAddress`)
@@ -639,8 +639,8 @@ abstract contract ONFT721Core is NonblockingLzApp, ERC165, IONFT721Core {
         return lzEndpoint.estimateFees(_dstChainId, address(this), payload, _useZro, _adapterParams);
     }
 
-    function sendFrom(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
-        _send(_from, _dstChainId, _toAddress, _tokenIds, _refundAddress, _zroPaymentAddress, _adapterParams);
+    function sendFrom(uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
+        _send(msg.sender, _dstChainId, _toAddress, _tokenIds, _refundAddress, _zroPaymentAddress, _adapterParams);
     }
 
     function _send(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) internal virtual {
@@ -1455,7 +1455,10 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
 
 pragma solidity ^0.8.0;
-contract AxolittlesArb is ONFT721Core, ERC721, IONFT721 {
+contract AxolittlesArb is Ownable, ONFT721Core, ERC721, IONFT721 {
+    uint256 public maxItems = 10000;
+    string public _baseTokenURI;
+
     constructor(address _lzEndpoint) ERC721("Axolittles", "AXOLITTLE") ONFT721Core(_lzEndpoint) {}
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ONFT721Core, ERC721, IERC165) returns (bool) {
@@ -1464,10 +1467,9 @@ contract AxolittlesArb is ONFT721Core, ERC721, IONFT721 {
 
     function _debitFrom(address _from, uint16, bytes memory, uint16[] memory _tokenIds) internal virtual override {
         for (uint16 i = 0; i < _tokenIds.length;) {
-            require(_isApprovedOrOwner(_msgSender(), _tokenIds[i]), "Axolittles: send caller is not owner nor approved");
-            require(ERC721.ownerOf(_tokenIds[i]) == _from, "Axolittles: send from incorrect owner");
+            require(ERC721.ownerOf(_tokenIds[i]) == _from, "Axolittles: incorrect owner");
             _burn(_tokenIds[i]);
-            unchecked { i++; }
+            unchecked { ++i; }
         }
     }
 
@@ -1475,11 +1477,33 @@ contract AxolittlesArb is ONFT721Core, ERC721, IONFT721 {
         for (uint16 i = 0; i < _tokenIds.length;) {
             require(!_exists(_tokenIds[i]), "Axolittles: already exist");
             _safeMint(_toAddress, _tokenIds[i]);
-            unchecked { i++; }
+            unchecked { ++i; }
         }
     }
 
-    function sd() external {
-        selfdestruct(payable(msg.sender));
+    // set base URI for token metadata. Allows file host change to ipfs
+    function setBaseTokenURI(string memory __baseTokenURI) external onlyOwner {
+        _baseTokenURI = __baseTokenURI;
+    }
+
+    // Returns a URI for a given token ID's metadata
+    function tokenURI(uint256 _tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return
+            string(abi.encodePacked(_baseTokenURI, Strings.toString(_tokenId)));
+    }
+
+    function adminRecover(address _to, uint16 _tokenId, bool isMint) external onlyOwner {
+        if (isMint) {
+            _safeMint(_to, _tokenId);
+        }
+        else {
+            require(_exists(_tokenId), "Axolittles: doesn't exist");
+            _burn(_tokenId);
+        }
     }
 }

@@ -18,10 +18,10 @@ module.exports = {
                 enabled: true,
             },
         },
-        // live: {
-        //     url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-        //     accounts: [process.env.TESTER_PRIVATE_KEY],
-        // },
+        live: {
+            url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+            accounts: [process.env.TESTER_PRIVATE_KEY],
+        },
         rinkeby: {
             url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
             accounts: [process.env.TESTER_PRIVATE_KEY],
@@ -30,7 +30,10 @@ module.exports = {
         //     url: `https://rpc.testnet.fantom.network`,
         //     accounts: [process.env.TESTER_PRIVATE_KEY],
         // },
-
+        arbitrum : {
+            url: `https://arb-mainnet.g.alchemy.com/v2/m-Io_rcSWMqv9A52_dQfkBYHo8EV_HUC`,
+            accounts: [process.env.TESTER_PRIVATE_KEY],
+        },
         rinkArby: {
             url: `https://arb-rinkeby.g.alchemy.com/v2/${process.env.ARB_RINKEBY_PROJECT_ID}`,
             accounts: [process.env.TESTER_PRIVATE_KEY],

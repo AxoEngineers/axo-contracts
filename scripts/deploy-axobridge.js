@@ -22,19 +22,19 @@ async function main() {
     // );
 
     // const AxoBridge = await hre.ethers.getContractFactory("AxoBridge");
-    // const axobridge = await AxoBridge.deploy("0x79a63d6d8BBD5c6dfc774dA79bCcD948EAcb53FA");
+    // const axobridge = await AxoBridge.deploy("0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675");
     // await axobridge.deployed();
     // console.log("axobridge: ", axobridge.address);
 
-    // await axobridge.setTrustedRemote(10011, "0xD9FB89c3f4456104130a97abDf2F756360660E0a");
+    //await axobridge.setTrustedRemote(10011, "0xD9FB89c3f4456104130a97abDf2F756360660E0a");
 
 
 
     // await testnft.setApprovalForAll(axobridge.address, true);
-    // const AxoArb = await hre.ethers.getContractFactory("AxolittlesArb");
-    // const axoarb = await AxoArb.deploy("0x4D747149A57923Beb89f22E6B7B97f7D8c087A00");
-    // await axoarb.deployed();
-    // console.log("axoarb: ", axoarb.address);
+    const AxoArb = await hre.ethers.getContractFactory("AxolittlesArb");
+    const axoarb = await AxoArb.deploy("0x3c2269811836af69497E5F486A85D7316753cf62");
+    await axoarb.deployed();
+    console.log("axoarb: ", axoarb.address);
 
     /*--------------- test code ----------------*/
 
