@@ -31,10 +31,10 @@ async function main() {
 
 
     // await testnft.setApprovalForAll(axobridge.address, true);
-    const AxoArb = await hre.ethers.getContractFactory("AxolittlesArb");
-    const axoarb = await AxoArb.deploy("0x3c2269811836af69497E5F486A85D7316753cf62");
-    await axoarb.deployed();
-    console.log("axoarb: ", axoarb.address);
+    // const AxoArb = await hre.ethers.getContractFactory("AxolittlesArb");
+    // const axoarb = await AxoArb.deploy("0x3c2269811836af69497E5F486A85D7316753cf62");
+    // await axoarb.deployed();
+    // console.log("axoarb: ", axoarb.address);
 
     /*--------------- test code ----------------*/
 
@@ -46,17 +46,29 @@ async function main() {
     //     "0xa1aed6f3B7C8F871b4Ac27144ADE9fDa6fBCD639"
     // );
 
-    // testnft = new ethers.Contract(
-    //     "0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7",
-    //     require("./ABI/TestNFTABI.json"),
-    //     ori
-    // );
+//  accounts = await hre.ethers.getSigners();
+
+//     testnft = new ethers.Contract(
+//         "0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7",
+//         require("./ABI/TestNFTABI.json"),
+//         accounts[0]
+//     );
+//     for (let i = 0; i < 20; i++)
+//     {
+//         testnft.mint();
+//         await waitFor(10000);
+//     }
 
     // axobridge = new ethers.Contract(
-    //     "0x435885c918450049C2d6d14D51B47A341a26fAad",
+    //     "0xF25e24520f4E980e84888bb14b211B8a8ae4f015",
     //     require("./ABI/AxoBridgeABI.json"),
-    //     ori
+    //     accounts[0]
     // );
+
+    // await axobridge.setTrustedRemote(10010, "0x1C57a8294626d8a3D73E7CC4F25E7464A53BdE4d");
+    let x = 200000 + (75000 * 3);
+    console.log(ethers.utils.solidityPack(['uint16', 'uint256'], [1, x]));
+
 
     // console.log(await testnft.ownerOf(0));
     // await axobridge.sendFrom(

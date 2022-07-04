@@ -9,7 +9,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AxoBridge is Ownable, ONFT721Core, IERC721Receiver {
 
-    IERC721 public Axolittles = IERC721(0xf36446105fF682999a442b003f2224BcB3D82067);
+    // mainnet
+    // IERC721 public Axolittles = IERC721(0xf36446105fF682999a442b003f2224BcB3D82067);
+
+    // testnet
+    IERC721 public Axolittles = IERC721(0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7);
 
     constructor(address _lzEndpoint) ONFT721Core(_lzEndpoint) {}
 

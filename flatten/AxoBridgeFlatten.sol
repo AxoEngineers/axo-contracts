@@ -319,11 +319,15 @@ abstract contract LzApp is Ownable, ILayerZeroReceiver, ILayerZeroUserApplicatio
 
     event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
+    event onLzReceive(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes _payload);
+
     constructor(address _endpoint) {
         lzEndpoint = ILayerZeroEndpoint(_endpoint);
     }
 
     function lzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) public virtual override {
+        emit onLzReceive(_srcChainId, _srcAddress, _nonce, _payload);
+
         // lzReceive must be called by the endpoint for security
         require(_msgSender() == address(lzEndpoint), "LzApp: invalid endpoint caller");
 
@@ -397,8 +401,12 @@ abstract contract NonblockingLzApp is LzApp {
 
     event MessageFailed(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes _payload);
 
+    event onBlockingLzReceive(uint64 _nonce);
+    event onNonBlockingLzReceive(uint64 _nonce);
+    event onRetryMessage(uint64 _nonce);
     // overriding the virtual function in LzReceiver
     function _blockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
+        emit onBlockingLzReceive(_nonce);
         // try-catch all errors/exceptions
         try this.nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload) {
             // do nothing
@@ -410,6 +418,7 @@ abstract contract NonblockingLzApp is LzApp {
     }
 
     function nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) public virtual {
+        emit onNonBlockingLzReceive(_nonce);
         // only internal transaction
         require(_msgSender() == address(this), "NonblockingLzApp: caller must be LzApp");
         _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload);
@@ -419,6 +428,7 @@ abstract contract NonblockingLzApp is LzApp {
     function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual;
 
     function retryMessage(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) public payable virtual {
+        emit onRetryMessage(_nonce);
         // assert there is message to retry
         bytes32 payloadHash = failedMessages[_srcChainId][_srcAddress][_nonce];
         require(payloadHash != bytes32(0), "NonblockingLzApp: no stored message");
@@ -495,7 +505,9 @@ abstract contract ONFT721Core is NonblockingLzApp, ERC165, IONFT721Core {
         emit SendToChain(_from, _dstChainId, _toAddress, _tokenIds, nonce);
     }
 
+    event onNonBlockingLzReceive2(uint64 _nonce);
     function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
+        emit onNonBlockingLzReceive2(_nonce);
         // decode and load the toAddress
         (bytes memory toAddressBytes, uint16[] memory tokenIds) = abi.decode(_payload, (bytes, uint16[]));
         address toAddress;
@@ -697,7 +709,11 @@ interface IERC721Receiver {
 pragma solidity ^0.8.0;
 contract AxoBridge is Ownable, ONFT721Core, IERC721Receiver {
 
-    IERC721 public Axolittles = IERC721(0xf36446105fF682999a442b003f2224BcB3D82067);
+    // mainnet
+    // IERC721 public Axolittles = IERC721(0xf36446105fF682999a442b003f2224BcB3D82067);
+
+    // testnet
+    IERC721 public Axolittles = IERC721(0x14B6254fe94527FF1e4E2654ab7A9b6De52baFa7);
 
     constructor(address _lzEndpoint) ONFT721Core(_lzEndpoint) {}
 
