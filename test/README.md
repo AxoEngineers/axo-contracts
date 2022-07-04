@@ -58,3 +58,10 @@ caller = {
     balance: 10,
 }
 ```
+
+## Contract addresses
+Axolittles: 0xf36446105fF682999a442b003f2224BcB3D82067
+StakingV1: 0x1ca6e4643062e67ccd555fb4f64bee603340e0ea
+Bubbles: 0x58f46f627c88a3b217abc80563b9a726abb873ba
+StakingV2: 0xbfcA4318f4d47f8A8e49e16c0f2B466c46EAC184
+BubblesAirdrop: 0x184fae65b0d0bbba559326feb7d9fcc6e8f31df7
