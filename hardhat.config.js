@@ -13,8 +13,8 @@ module.exports = {
     networks: {
         hardhat: {
             forking: {
-                url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-                blockNumber: 10813699,
+                url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+                blockNumber: 15219935,
                 enabled: true,
             },
         },
