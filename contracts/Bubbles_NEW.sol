@@ -1,10 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
-
-/*************************************
- * old bubbles contract, deployed on eth
- * https://etherscan.io/address/0x58f46f627c88a3b217abc80563b9a726abb873ba#code
- * Use Bubbles_NEW.sol for future deployments
- */
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.10;
 
@@ -19,11 +13,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
     Imitates relationship between Ether and Wei, contains 18 decimals.
     User representation is balance/(10 ** 18).
     */
-contract Bubbles_OLD_ is ERC20("Bubbles", "BUBBLE"), Ownable {
-    /// @dev addresses allowed to mint bubbles, currently only set to address of AxolittlesStaking contract
+contract Bubbles is ERC20("Bubbles", "BUBBLE"), Ownable {
+    /// @dev addresses allowed to mint or burn bubbles
     mapping(address => bool) public minters;
-
-    constructor() {}
+    mapping(address => bool) public burners;
 
     /**
     @notice function to mint Bubbles to recipient
@@ -44,11 +37,31 @@ contract Bubbles_OLD_ is ERC20("Bubbles", "BUBBLE"), Ownable {
     }
 
     /**
+    @notice function to burn bubbles owned by target
+    @param target address where Bubbles are burned
+    @param amount number of bubbles(including 18 decimals) to burn
+    */
+    function burnFrom(address target, uint256 amount) external {
+        require(burners[msg.sender], "Not approved to burn");
+        _spendAllowance(target, address(msg.sender), amount);
+        _burn(target, amount);
+    }
+
+    /**
     @notice function to add addresses allowed to mint
     @param addr address of minter
-    @param val bool toggle, allows minting from address when 1
+    @param val bool toggle, allows minting from address when true
      */
     function setMinter(address addr, bool val) external onlyOwner {
         minters[addr] = val;
+    }
+
+    /**
+    @notice function to add addresses allowed to burn for others
+    @param addr address of burner
+    @param val bool toggle, allows burning from address when true
+     */
+    function setBurner(address addr, bool val) external onlyOwner {
+        burners[addr] = val;
     }
 }

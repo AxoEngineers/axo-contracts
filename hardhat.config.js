@@ -14,7 +14,7 @@ module.exports = {
         hardhat: {
             forking: {
                 url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-                blockNumber: 10813699,
+                blockNumber: 11192702,
                 enabled: true,
             },
         },

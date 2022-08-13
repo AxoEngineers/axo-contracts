@@ -48,6 +48,7 @@
     },
     "dependencies": {
         "@arbitrum/sdk": "^1.0.1",
+        "@openzeppelin/test-helpers": "^0.5.15",
         "arb-shared-dependencies": "^1.0.0",
         "sass": "^1.49.9"
     }
