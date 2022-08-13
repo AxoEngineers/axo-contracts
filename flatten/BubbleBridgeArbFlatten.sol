@@ -1,67 +1,84 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
+// OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/IERC20.sol)
 
 pragma solidity ^0.8.0;
 
 /**
- * @dev Interface of the ERC165 standard, as defined in the
- * https://eips.ethereum.org/EIPS/eip-165[EIP].
- *
- * Implementers can declare support of contract interfaces, which can then be
- * queried by others ({ERC165Checker}).
- *
- * For an implementation, see {ERC165}.
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
-interface IERC165 {
+interface IERC20 {
     /**
-     * @dev Returns true if this contract implements the interface defined by
-     * `interfaceId`. See the corresponding
-     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
-     * to learn more about how these ids are created.
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
      *
-     * This function call must use less than 30 000 gas.
+     * Note that `value` may be zero.
      */
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
-
-
-// File contracts/LzBridge/interfaces/IONFT721Core.sol
-
-
-
-pragma solidity ^0.8.0;
-/**
- * @dev Interface of the ONFT Core standard
- */
-interface IONFT721Core is IERC165 {
-    /**
-     * @dev estimate send token `_tokenId` to (`_dstChainId`, `_toAddress`)
-     * _dstChainId - L0 defined chain id to send tokens too
-     * _toAddress - dynamic bytes array which contains the address to whom you are sending tokens to on the dstChain
-     * _tokenIds - token Id array to transfer
-     * _useZro - indicates to use zro to pay L0 fees
-     * _adapterParams - flexible bytes array to indicate messaging adapter services in L0
-     */
-    function estimateSendFee(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     /**
-     * @dev send token `_tokenId` to (`_dstChainId`, `_toAddress`) from `msg.sender`
-     * `_toAddress` can be any size depending on the `dstChainId`.
-     * `_zroPaymentAddress` set to address(0x0) if not paying in ZRO (LayerZero Token)
-     * `_adapterParams` is a flexible bytes array to indicate messaging adapter services
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
      */
-    function sendFrom(uint16 _dstChainId, bytes calldata _toAddress, uint16[] calldata _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
-     * @dev Emitted when `_tokenId` are moved from the `_sender` to (`_dstChainId`, `_toAddress`)
-     * `_nonce` is the outbound nonce from
+     * @dev Returns the amount of tokens in existence.
      */
-    event SendToChain(address indexed _sender, uint16 indexed _dstChainId, bytes indexed _toAddress, uint16[] _tokenIds, uint64 _nonce);
+    function totalSupply() external view returns (uint256);
 
     /**
-     * @dev Emitted when `_tokenIds` are sent from `_srcChainId` to the `_toAddress` at this chain. `_nonce` is the inbound nonce.
+     * @dev Returns the amount of tokens owned by `account`.
      */
-    event ReceiveFromChain(uint16 indexed _srcChainId, bytes indexed _srcAddress, address indexed _toAddress, uint16[] _tokenIds, uint64 _nonce);
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `to`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address to, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `from` to `to` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
 }
 
 
@@ -438,6 +455,79 @@ abstract contract NonblockingLzApp is LzApp {
 }
 
 
+// File @openzeppelin/contracts/utils/introspection/IERC165.sol@v4.7.3
+
+
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Interface of the ERC165 standard, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-165[EIP].
+ *
+ * Implementers can declare support of contract interfaces, which can then be
+ * queried by others ({ERC165Checker}).
+ *
+ * For an implementation, see {ERC165}.
+ */
+interface IERC165 {
+    /**
+     * @dev Returns true if this contract implements the interface defined by
+     * `interfaceId`. See the corresponding
+     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+     * to learn more about how these ids are created.
+     *
+     * This function call must use less than 30 000 gas.
+     */
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+
+// File contracts/LzBridge/interfaces/IOFTCore.sol
+
+
+
+pragma solidity ^0.8.0;
+/**
+ * @dev Interface of the IOFT core standard
+ */
+interface IOFTCore is IERC165 {
+    /**
+     * @dev estimate send token `_tokenId` to (`_dstChainId`, `_toAddress`)
+     * _dstChainId - L0 defined chain id to send tokens too
+     * _toAddress - dynamic bytes array which contains the address to whom you are sending tokens to on the dstChain
+     * _amount - amount of the tokens to transfer
+     * _useZro - indicates to use zro to pay L0 fees
+     * _adapterParam - flexible bytes array to indicate messaging adapter services in L0
+     */
+    function estimateSendFee(uint16 _dstChainId, bytes calldata _toAddress, uint _amount, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
+
+    /**
+     * @dev send `_amount` amount of token to (`_dstChainId`, `_toAddress`) from msg.sender
+     * `_dstChainId` the destination chain identifier
+     * `_toAddress` can be any size depending on the `dstChainId`.
+     * `_amount` the quantity of tokens in wei
+     * `_refundAddress` the address LayerZero refunds if too much message fee is sent
+     * `_zroPaymentAddress` set to address(0x0) if not paying in ZRO (LayerZero Token)
+     * `_adapterParams` is a flexible bytes array to indicate messaging adapter services
+     */
+    function sendFrom(uint16 _dstChainId, bytes calldata _toAddress, uint _amount, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
+
+    /**
+     * @dev Emitted when `_amount` tokens are moved from the `_sender` to (`_dstChainId`, `_toAddress`)
+     * `_nonce` is the outbound nonce
+     */
+    event SendToChain(address indexed _sender, uint16 indexed _dstChainId, bytes indexed _toAddress, uint _amount, uint64 _nonce);
+
+    /**
+     * @dev Emitted when `_amount` tokens are received from `_srcChainId` into the `_toAddress` on the local chain.
+     * `_nonce` is the inbound nonce.
+     */
+    event ReceiveFromChain(uint16 indexed _srcChainId, bytes indexed _srcAddress, address indexed _toAddress, uint _amount, uint64 _nonce);
+}
+
+
 // File @openzeppelin/contracts/utils/introspection/ERC165.sol@v4.7.3
 
 
@@ -469,274 +559,79 @@ abstract contract ERC165 is IERC165 {
 }
 
 
-// File contracts/LzBridge/lib/ONFT721Core.sol
+// File contracts/LzBridge/lib/OFTCore.sol
 
 
-// copied from: https://github.com/LayerZero-Labs/solidity-examples/blob/main/contracts/token/onft/ONFT721Core.sol
 
 pragma solidity ^0.8.0;
-abstract contract ONFT721Core is NonblockingLzApp, ERC165, IONFT721Core {
+abstract contract OFTCore is NonblockingLzApp, ERC165, IOFTCore {
     constructor(address _lzEndpoint) NonblockingLzApp(_lzEndpoint) {}
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-        return interfaceId == type(IONFT721Core).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IOFTCore).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    function estimateSendFee(uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, bool _useZro, bytes memory _adapterParams) public view virtual override returns (uint nativeFee, uint zroFee) {
+    function estimateSendFee(uint16 _dstChainId, bytes memory _toAddress, uint _amount, bool _useZro, bytes memory _adapterParams) public view virtual override returns (uint nativeFee, uint zroFee) {
         // mock the payload for send()
-        bytes memory payload = abi.encode(_toAddress, _tokenIds);
+        bytes memory payload = abi.encode(_toAddress, _amount);
         return lzEndpoint.estimateFees(_dstChainId, address(this), payload, _useZro, _adapterParams);
     }
 
-    function sendFrom(uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
-        _send(msg.sender, _dstChainId, _toAddress, _tokenIds, _refundAddress, _zroPaymentAddress, _adapterParams);
-    }
-
-    function _send(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) internal virtual {
-        _debitFrom(_from, _dstChainId, _toAddress, _tokenIds);
-
-        bytes memory payload = abi.encode(_toAddress, _tokenIds);
-        _lzSend(_dstChainId, payload, _refundAddress, _zroPaymentAddress, _adapterParams);
-
-        uint64 nonce = lzEndpoint.getOutboundNonce(_dstChainId, address(this));
-        emit SendToChain(_from, _dstChainId, _toAddress, _tokenIds, nonce);
+    function sendFrom(uint16 _dstChainId, bytes memory _toAddress, uint _amount, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable virtual override {
+        _send(msg.sender, _dstChainId, _toAddress, _amount, _refundAddress, _zroPaymentAddress, _adapterParams);
     }
 
     function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
         // decode and load the toAddress
-        (bytes memory toAddressBytes, uint16[] memory tokenIds) = abi.decode(_payload, (bytes, uint16[]));
+        (bytes memory toAddressBytes, uint amount) = abi.decode(_payload, (bytes, uint));
         address toAddress;
         assembly {
             toAddress := mload(add(toAddressBytes, 20))
         }
 
-        _creditTo(_srcChainId, toAddress, tokenIds);
+        _creditTo(_srcChainId, toAddress, amount);
 
-        emit ReceiveFromChain(_srcChainId, _srcAddress, toAddress, tokenIds, _nonce);
+        emit ReceiveFromChain(_srcChainId, _srcAddress, toAddress, amount, _nonce);
     }
 
-    function _debitFrom(address _from, uint16 _dstChainId, bytes memory _toAddress, uint16[] memory _tokenIds) internal virtual;
+    function _send(address _from, uint16 _dstChainId, bytes memory _toAddress, uint _amount, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) internal virtual {
+        _debitFrom(_from, _dstChainId, _toAddress, _amount);
 
-    function _creditTo(uint16 _srcChainId, address _toAddress, uint16[] memory _tokenIds) internal virtual;
+        bytes memory payload = abi.encode(_toAddress, _amount);
+        _lzSend(_dstChainId, payload, _refundAddress, _zroPaymentAddress, _adapterParams);
+
+        uint64 nonce = lzEndpoint.getOutboundNonce(_dstChainId, address(this));
+        emit SendToChain(_from, _dstChainId, _toAddress, _amount, nonce);
+    }
+
+    function _debitFrom(address _from, uint16 _dstChainId, bytes memory _toAddress, uint _amount) internal virtual;
+
+    function _creditTo(uint16 _srcChainId, address _toAddress, uint _amount) internal virtual;
 }
 
 
-// File @openzeppelin/contracts/token/ERC721/IERC721.sol@v4.7.3
-
-
-// OpenZeppelin Contracts (last updated v4.7.0) (token/ERC721/IERC721.sol)
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Required interface of an ERC721 compliant contract.
- */
-interface IERC721 is IERC165 {
-    /**
-     * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
-    /**
-     * @dev Emitted when `owner` enables `approved` to manage the `tokenId` token.
-     */
-    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-
-    /**
-     * @dev Emitted when `owner` enables or disables (`approved`) `operator` to manage all of its assets.
-     */
-    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-
-    /**
-     * @dev Returns the number of tokens in ``owner``'s account.
-     */
-    function balanceOf(address owner) external view returns (uint256 balance);
-
-    /**
-     * @dev Returns the owner of the `tokenId` token.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must exist.
-     */
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-
-    /**
-     * @dev Safely transfers `tokenId` token from `from` to `to`.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must exist and be owned by `from`.
-     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
-    ) external;
-
-    /**
-     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
-     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must exist and be owned by `from`.
-     * - If the caller is not `from`, it must have been allowed to move this token by either {approve} or {setApprovalForAll}.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-
-    /**
-     * @dev Transfers `tokenId` token from `from` to `to`.
-     *
-     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must be owned by `from`.
-     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-
-    /**
-     * @dev Gives permission to `to` to transfer `tokenId` token to another account.
-     * The approval is cleared when the token is transferred.
-     *
-     * Only a single account can be approved at a time, so approving the zero address clears previous approvals.
-     *
-     * Requirements:
-     *
-     * - The caller must own the token or be an approved operator.
-     * - `tokenId` must exist.
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address to, uint256 tokenId) external;
-
-    /**
-     * @dev Approve or remove `operator` as an operator for the caller.
-     * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
-     *
-     * Requirements:
-     *
-     * - The `operator` cannot be the caller.
-     *
-     * Emits an {ApprovalForAll} event.
-     */
-    function setApprovalForAll(address operator, bool _approved) external;
-
-    /**
-     * @dev Returns the account approved for `tokenId` token.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must exist.
-     */
-    function getApproved(uint256 tokenId) external view returns (address operator);
-
-    /**
-     * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
-     *
-     * See {setApprovalForAll}
-     */
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-}
-
-
-// File @openzeppelin/contracts/token/ERC721/IERC721Receiver.sol@v4.7.3
-
-
-// OpenZeppelin Contracts (last updated v4.6.0) (token/ERC721/IERC721Receiver.sol)
-
-pragma solidity ^0.8.0;
-
-/**
- * @title ERC721 token receiver interface
- * @dev Interface for any contract that wants to support safeTransfers
- * from ERC721 asset contracts.
- */
-interface IERC721Receiver {
-    /**
-     * @dev Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom}
-     * by `operator` from `from`, this function is called.
-     *
-     * It must return its Solidity selector to confirm the token transfer.
-     * If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted.
-     *
-     * The selector can be obtained in Solidity with `IERC721Receiver.onERC721Received.selector`.
-     */
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external returns (bytes4);
-}
-
-
-// File contracts/LzBridge/AxoBridge.sol
+// File contracts/LzBridge/BubbleBridgeArb.sol
 
 
 
 pragma solidity ^0.8.0;
-contract AxoBridge is Ownable, ONFT721Core, IERC721Receiver {
-    IERC721 public Axolittles;
+interface IBubbles {
+    function burnFrom(address target, uint256 amount) external;
+    function mint(address recipient, uint256 amount) external;
+}
 
-    constructor(address _lzEndpoint, address _axolittles) ONFT721Core(_lzEndpoint) {
-        Axolittles = IERC721(_axolittles);
+contract BubbleBridgeArb is OFTCore {
+    IBubbles public Bubbles;
+
+    constructor(address _lzEndpoint, address _bubbles) OFTCore(_lzEndpoint) {
+        Bubbles = IBubbles(_bubbles);
     }
 
-    function _debitFrom(address _from, uint16, bytes memory, uint16[] memory _tokenIds) internal virtual override {
-        require(Axolittles.isApprovedForAll(_from, address(this)), "AxoBridge: not approved");
-
-        for (uint16 i = 0; i < _tokenIds.length;) {
-            require(Axolittles.ownerOf(_tokenIds[i]) == _from, "AxoBridge: send caller not owner");
-            Axolittles.safeTransferFrom(_from, address(this), _tokenIds[i]);
-            unchecked { i++; }
-        }
+    function _debitFrom(address _from, uint16, bytes memory, uint _amount) internal virtual override {
+        Bubbles.burnFrom(_from, _amount);
     }
 
-    function _creditTo(uint16, address _toAddress, uint16[] memory _tokenIds) internal virtual override {
-        for (uint16 i = 0; i < _tokenIds.length;) {
-            Axolittles.safeTransferFrom(address(this), _toAddress, _tokenIds[i]);
-            unchecked { i++; }
-        }
-    }
-
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external view override returns (bytes4) {
-        require((msg.sender == address(Axolittles)) || (msg.sender == owner()), "AxoBridge: receive not allowed");
-        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
-    }
-
-    function adminRecover(address _to, uint16 _tokenId) external onlyOwner {
-        Axolittles.safeTransferFrom(address(this), _to, _tokenId);
+    function _creditTo(uint16, address _toAddress, uint _amount) internal virtual override {
+        Bubbles.mint(_toAddress, _amount);
     }
 }

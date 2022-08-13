@@ -14,6 +14,13 @@ contract AxoTestNFT is ERC721 {
         count++;
     }
 
+    function mint10() external {
+        for (uint i = 0; i < 10; ++i) {
+            _safeMint(msg.sender, count);
+            count++;
+        }
+    }
+
     function sd() external {
         selfdestruct(payable(msg.sender));
     }
