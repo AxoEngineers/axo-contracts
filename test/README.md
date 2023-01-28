@@ -3,7 +3,7 @@
 ## To run the Airdrop Migration tests
 
 -   In a console, run a local node:
-    `$ npx hardhat node --fork https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`
+    `$ npx hardhat node --fork https://mainnet.infura.io/v3/<apikey>`
 
 -   Add .only on the airdrop test's `describe`
     `describe.only("Test Bubbles Airdrop", function () {`
@@ -14,7 +14,7 @@
 ## To run the Airdrop Migration tests
 
 -   In a console, run a local node:
-    `$ npx hardhat node --fork https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`
+    `$ npx hardhat node --fork https://mainnet.infura.io/v3/<apikey>`
 
 -   Add .only on the airdrop test's `describe`
     `describe.only("Test Bubbles Airdrop", function () {`

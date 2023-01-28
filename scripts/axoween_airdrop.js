@@ -1,8 +1,5 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
+// Script for batch minting Seasonal Axos. Depends on manually generated ./snapshot.json and ./claim.json
+
 const hre = require("hardhat");
 require("dotenv").config();
 const waitFor = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
@@ -44,14 +41,6 @@ async function main() {
     })
 
     // airdrop
-
-    // await hre.network.provider.request({
-    //     method: "hardhat_impersonateAccount",
-    //     params: ["0xB798D630Fc71004d863bf3b3CCD1f70B6CA919f1"],
-    // });
-    // ori = await ethers.getSigner(
-    //     "0xB798D630Fc71004d863bf3b3CCD1f70B6CA919f1"
-    // );
     let accounts = await ethers.getSigners();
     airdrop = new ethers.Contract(
         "0xBcdaB29129534f5cfCD54Fd2f6e489026Bd88e9E",
@@ -61,6 +50,7 @@ async function main() {
 
     for (let i = 0; i < claim.length; i++ ){
         console.log("minting: " + claim[i].claimed + " for: ", claim[i].tokens)
+        // update token ids here
         await airdrop.mintBatch(claim[i].claimed, [11,12,13,14,15,16,17,18,19], claim[i].tokens, "0x");
         await waitFor(5000);
         

@@ -38,14 +38,6 @@ async function main() {
 
     /*--------------- test code ----------------*/
 
-    // await hre.network.provider.request({
-    //     method: "hardhat_impersonateAccount",
-    //     params: ["0xa1aed6f3B7C8F871b4Ac27144ADE9fDa6fBCD639"],
-    // });
-    // ori = await ethers.getSigner(
-    //     "0xa1aed6f3B7C8F871b4Ac27144ADE9fDa6fBCD639"
-    // );
-
 //  accounts = await hre.ethers.getSigners();
 
 //     testnft = new ethers.Contract(
